@@ -6,7 +6,7 @@ from models import User, Event, Booking, Payment, Review
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:123@localhost:5432/event"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:root@localhost:5432/event"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
