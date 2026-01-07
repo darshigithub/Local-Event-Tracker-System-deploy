@@ -1,16 +1,19 @@
-
 from flask import Flask
-from models.database import engine, Base
+from database.connection import db
 
+# 🔥 IMPORT MODELS (ABSOLUTELY REQUIRED)
+from models import User, Event, Booking, Payment, Review
 
 app = Flask(__name__)
 
-Base.metadata.create_all(bind=engine)
-print("All tables created successfully")
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:123@localhost:5432/event"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-@app.route("/")
-def home():
-    return "Local Event Tracker API Running"
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
+    print("✅ Tables created")
 
 if __name__ == "__main__":
     app.run(debug=True)
