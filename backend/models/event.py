@@ -1,33 +1,41 @@
-from sqlalchemy import (
-    Column, Integer, String, Text, Date, Time,
-    Numeric, DECIMAL, ForeignKey, TIMESTAMP
-)
-from sqlalchemy.sql import func
-from models import Base
+from database.connection import db
+from datetime import date
 
-class Event(Base):
+class Event(db.Model):
     __tablename__ = "events"
 
-    event_id = Column(Integer, primary_key=True, index=True)
+    event_id = db.Column(db.Integer, primary_key=True)
 
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id"),
+        nullable=False
+    )
 
-    title = Column(String(200), nullable=False)
-    description = Column(Text)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
 
-    event_date = Column(Date, nullable=False)
-    start_time = Column(Time, nullable=False)
-    end_time = Column(Time, nullable=False)
+    event_date = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
 
-    capacity = Column(Integer, nullable=False)
-    price = Column(Numeric(10, 2), nullable=False, default=0)
+    capacity = db.Column(db.Integer, nullable=False)
+    available_seats = db.Column(db.Integer, nullable=False)
 
-    latitude = Column(DECIMAL(9, 6), nullable=False)
-    longitude = Column(DECIMAL(9, 6), nullable=False)
-    address = Column(Text)
+    price = db.Column(db.Numeric(10, 2), nullable=False)
 
-    category = Column(String(50))
+    location = db.Column(db.Text)
+    category = db.Column(db.String(50))
 
-    status = Column(String(20), default="active")
+    status = db.Column(db.String(20), default="ACTIVE")
 
-    created_at = Column(TIMESTAMP, server_default=func.now())
+    created_at = db.Column(db.Date, default=date.today)
+
+    def to_dict(self):
+        return {
+            "event_id": self.event_id,
+            "title": self.title,
+            "price": str(self.price),
+            "available_seats": self.available_seats,
+            "status": self.status
+        }

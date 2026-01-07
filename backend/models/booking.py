@@ -1,25 +1,33 @@
-from sqlalchemy import (
-    Column, Integer, String, ForeignKey,
-    TIMESTAMP, CheckConstraint, UniqueConstraint
-)
-from sqlalchemy.sql import func
-from models import Base
+from database.connection import db
+from datetime import date
 
-class Booking(Base):
+class Booking(db.Model):
     __tablename__ = "bookings"
 
-    booking_id = Column(Integer, primary_key=True, index=True)
+    booking_id = db.Column(db.Integer, primary_key=True)
 
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
-    event_id = Column(Integer, ForeignKey("events.event_id", ondelete="CASCADE"))
-
-    number_of_seats = Column(Integer, nullable=False)
-
-    booking_status = Column(String(20), default="PENDING")
-
-    created_at = Column(TIMESTAMP, server_default=func.now())
-
-    __table_args__ = (
-        CheckConstraint("number_of_seats > 0"),
-        UniqueConstraint("user_id", "event_id"),
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id"),
+        nullable=False
     )
+
+    event_id = db.Column(
+        db.Integer,
+        db.ForeignKey("events.event_id"),
+        nullable=False
+    )
+
+    seats_booked = db.Column(db.Integer, nullable=False)
+
+    booking_date = db.Column(db.Date, default=date.today)
+
+    status = db.Column(db.String(20), default="PLACED")
+
+    def to_dict(self):
+        return {
+            "booking_id": self.booking_id,
+            "event_id": self.event_id,
+            "seats_booked": self.seats_booked,
+            "status": self.status
+        }

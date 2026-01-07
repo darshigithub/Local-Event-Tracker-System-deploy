@@ -1,31 +1,37 @@
-from sqlalchemy import (
-    Column, Integer, Text,
-    ForeignKey, TIMESTAMP, CheckConstraint, UniqueConstraint
-)
-from sqlalchemy.sql import func
-from models import Base
+from database.connection import db
+from datetime import date
 
-class Review(Base):
+class Review(db.Model):
     __tablename__ = "reviews"
 
-    id = Column(Integer, primary_key=True, index=True)
+    review_id = db.Column(db.Integer, primary_key=True)
 
-    event_id = Column(
-        Integer,
-        ForeignKey("events.event_id", ondelete="CASCADE")
+    booking_id = db.Column(
+        db.Integer,
+        db.ForeignKey("bookings.booking_id"),
+        unique=True,
+        nullable=False
     )
 
-    user_id = Column(
-        Integer,
-        ForeignKey("users.user_id", ondelete="CASCADE")
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id"),
+        nullable=False
     )
 
-    rating = Column(Integer)
-    review_text = Column(Text)
-
-    created_at = Column(TIMESTAMP, server_default=func.now())
-
-    __table_args__ = (
-        CheckConstraint("rating BETWEEN 1 AND 5"),
-        UniqueConstraint("event_id", "user_id"),
+    event_id = db.Column(
+        db.Integer,
+        db.ForeignKey("events.event_id"),
+        nullable=False
     )
+
+    rating = db.Column(db.Integer, nullable=False)
+    review_text = db.Column(db.Text)
+
+    review_date = db.Column(db.Date, default=date.today)
+
+    def to_dict(self):
+        return {
+            "rating": self.rating,
+            "review": self.review_text
+        }
