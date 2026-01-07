@@ -1,4 +1,7 @@
+
 from flask import Flask
+from models.database import engine, Base
+
 
 
 from routes.event import event_bp
@@ -14,6 +17,12 @@ app.register_blueprint(user_bp, url_prefix="/api")
 @app.route('/')
 def home():
     return "Welcome to event organization app!!"
+Base.metadata.create_all(bind=engine)
+print("All tables created successfully")
 
-if __name__ == '__main__':
-    app.run(debug=True) 
+@app.route("/")
+def home():
+    return "Local Event Tracker API Running"
+
+if __name__ == "__main__":
+    app.run(debug=True)
