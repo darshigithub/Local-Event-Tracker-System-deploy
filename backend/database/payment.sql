@@ -16,12 +16,6 @@ CREATE TABLE payments (
 
         CHECK (payment_gateway IN ('Razorpay', 'PayPal', 'Stripe', 'Paytm')),
  
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
 
 );
-
- 
-
-
-
- 

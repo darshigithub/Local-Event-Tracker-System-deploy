@@ -1,5 +1,6 @@
 from flask import Flask
 from database.connection import db
+from flask_cors import CORS
 
 # 🔥 IMPORT MODELS (ABSOLUTELY REQUIRED)
 from models import User, Event, Booking, Payment, Review
@@ -9,7 +10,13 @@ from routes.event import event_bp
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:123@localhost:5432/event"
+   
+
+CORS(app)  
+
+app.register_blueprint(user_bp, url_prefix="/api")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:root@localhost:5432/event"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
