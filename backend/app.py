@@ -16,7 +16,7 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
-    print("✅ Tables created")
+    print("✅ Tables created yes")
 
 if __name__ == "__main__":
     app.run(debug=True)
