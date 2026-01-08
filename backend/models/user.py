@@ -1,12 +1,19 @@
-from sqlalchemy import Column, Integer, String, Text, TIMESTAMP
-from sqlalchemy.sql import func
-from models import Base
+from database.connection import db
+from datetime import date
 
-class User(Base):
+class User(db.Model):
     __tablename__ = "users"
 
-    user_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    email = Column(String(150), unique=True, nullable=False)
-    password_hash = Column(Text, nullable=False)
-    created_at = Column(TIMESTAMP, server_default=func.now())
+    user_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.Text, nullable=False)
+
+    created_at = db.Column(db.Date, default=date.today)
+
+    def to_dict(self):
+        return {
+            "user_id": self.user_id,
+            "name": self.name,
+            "email": self.email
+        }

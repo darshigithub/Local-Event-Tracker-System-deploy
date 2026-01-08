@@ -1,49 +1,32 @@
-from sqlalchemy import (
-    Column, Integer, String, Numeric,
-    ForeignKey, TIMESTAMP, CheckConstraint
-)
-from sqlalchemy.sql import func
-from models import Base
+from database.connection import db
+from datetime import date
 
-
-class Payment(Base):
+class Payment(db.Model):
     __tablename__ = "payments"
 
-    payment_id = Column(Integer, primary_key=True, index=True)
+    payment_id = db.Column(db.Integer, primary_key=True)
 
-    booking_id = Column(
-        Integer,
-        ForeignKey("bookings.booking_id", ondelete="CASCADE"),
+    booking_id = db.Column(
+        db.Integer,
+        db.ForeignKey("bookings.booking_id"),
         unique=True,
         nullable=False
     )
 
-    payment_reference = Column(String(100))
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
 
-    amount = Column(Numeric(10, 2), nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False)
 
-    payment_status = Column(
-        String(20),
-        nullable=False
+    payment_status = db.Column(
+        db.String(20),
+        default="SUCCESS"
     )
 
-    payment_gateway = Column(
-        String(50),
-        nullable=False
-    )
+    payment_date = db.Column(db.Date, default=date.today)
 
-    created_at = Column(
-        TIMESTAMP,
-        server_default=func.now()
-    )
-
-    __table_args__ = (
-        CheckConstraint(
-            "payment_status IN ('SUCCESS', 'FAILED')",
-            name="check_payment_status"
-        ),
-        CheckConstraint(
-            "payment_gateway IN ('Razorpay', 'PayPal', 'Stripe', 'Paytm')",
-            name="check_payment_gateway"
-        ),
-    )
+    def to_dict(self):
+        return {
+            "payment_id": self.payment_id,
+            "amount": str(self.amount),
+            "payment_status": self.payment_status
+        }
