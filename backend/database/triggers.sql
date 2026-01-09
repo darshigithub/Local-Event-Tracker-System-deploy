@@ -20,4 +20,4 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_update_booking_status
 AFTER INSERT ON payments
 FOR EACH ROW
-EXECUTE FUNCTION update_booking_status_after_payment();
+EXECUTE FUNCTION update_booking_status_after_payment(); 

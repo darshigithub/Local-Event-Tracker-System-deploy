@@ -1,79 +1,35 @@
-from flask import Blueprint, request, jsonify
-from your_app import db
-from your_app.models import Event  # Make sure you have Event model defined
-from datetime import datetime
-
-
-
-from your_app.controllers.events_controller import (
-    add_event,
-    get_all_events,
-    get_event_by_id,
-    update_event,
-    delete_event
+from flask import Blueprint
+from controllers.event import (
+    create_event_controller,
+    get_all_events_controller,
+    get_event_by_id_controller,
+    update_event_controller,
+    delete_event_controller
 )
-# Create a Blueprint for events routes
-event_bp = Blueprint('event_bp', __name__)
 
-# -------------------- CREATE EVENT --------------------
-@event_bp.route('/event_add/', methods=['POST'])
-def route_add_event():
-    data = request.get_json()
-    # Basic validation
-    required_fields = ['user_id', 'title', 'event_date', 'start_time', 'end_time', 'capacity', 'latitude', 'longitude']
-    missing_fields = [field for field in required_fields if field not in data]
-    if missing_fields:
-        return jsonify({'error': f'Missing fields: {", ".join(missing_fields)}'}), 400
+event_bp = Blueprint("event", __name__)
 
-    try:
-        # Call controller function
-        result = add_event(data)
-        return jsonify(result), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+# Create Event
+@event_bp.route("/events", methods=["POST"])
+def create_event():
+    return create_event_controller()
 
-# -------------------- GET ALL EVENTS --------------------
-@event_bp.route('/events/', methods=['GET'])
-def route_get_events():
-    try:
-        result = get_all_events()
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+# Get All Events
+@event_bp.route("/events", methods=["GET"])
+def get_all_events():
+    return get_all_events_controller()
 
-# -------------------- GET SINGLE EVENT --------------------
-@event_bp.route('/events/<int:event_id>/', methods=['GET'])
-def route_get_event(event_id):
-    try:
-        result = get_event_by_id(event_id)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 404
+# Get Event by ID
+@event_bp.route("/events/<int:event_id>", methods=["GET"])
+def get_event_by_id(event_id):
+    return get_event_by_id_controller(event_id)
 
-# -------------------- UPDATE EVENT --------------------
-@event_bp.route('/events/<int:event_id>/update/', methods=['PUT'])
-def route_update_event(event_id):
-    data = request.get_json()
-    try:
-        result = update_event(event_id, data)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+# Update Event
+@event_bp.route("/events/<int:event_id>", methods=["PUT"])
+def update_event(event_id):
+    return update_event_controller(event_id)
 
-# -------------------- DELETE EVENT --------------------
-@event_bp.route('/events/<int:event_id>/delete/', methods=['DELETE'])
-def route_delete_event(event_id):
-    try:
-        result = delete_event(event_id)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-
-# event_bp = Blueprint('event_bp', __name__)
-
-# @event_bp.route('event_add/', method = ['POST'])
-# def support_add_product():
-#     return add_product()
-
-
+# Delete Event
+@event_bp.route("/events/<int:event_id>", methods=["DELETE"])
+def delete_event(event_id):
+    return delete_event_controller(event_id)

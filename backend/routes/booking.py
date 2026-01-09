@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify 
 from controllers.booking_controller import (
     create_booking_logic, 
     get_user_bookings_logic, 

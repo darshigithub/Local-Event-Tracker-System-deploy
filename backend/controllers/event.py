@@ -1,66 +1,94 @@
-from your_app.models import Event, db
-from datetime import datetime
+from models.event import Event
+from flask import request, jsonify
+from models.user import User
 
-# -------------------- CREATE EVENT --------------------
-def add_event(data):
-    event = Event(
-        user_id=data['user_id'],
-        title=data['title'],
-        description=data.get('description'),
-        event_date=datetime.strptime(data['event_date'], '%Y-%m-%d').date(),
-        start_time=datetime.strptime(data['start_time'], '%H:%M:%S').time(),
-        end_time=datetime.strptime(data['end_time'], '%H:%M:%S').time(),
-        capacity=data['capacity'],
-        price=data.get('price', 0),
-        latitude=data['latitude'],
-        longitude=data['longitude'],
-        address=data.get('address'),
-        category=data.get('category'),
-        status=data.get('status', 'active')
-    )
-    db.session.add(event)
-    db.session.commit()
-    return {'message': 'Event created', 'event': event.to_dict()}
+# def create_event_controller():
+#     try:
+#         data = request.get_json()
 
-# -------------------- GET ALL EVENTS --------------------
-def get_all_events():
-    events = Event.query.all()
-    return [event.to_dict() for event in events]
+#         event = Event.create(data)
 
-# -------------------- GET SINGLE EVENT --------------------
-def get_event_by_id(event_id):
-    event = Event.query.get_or_404(event_id)
-    return event.to_dict()
+#         return jsonify({
+#             "message": "Event created successfully",
+#             "event": event.to_dict()
+#         }), 201
 
-# -------------------- UPDATE EVENT --------------------
-def update_event(event_id, data):
-    event = Event.query.get_or_404(event_id)
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 400
 
-    event.title = data.get('title', event.title)
-    event.description = data.get('description', event.description)
-    if 'event_date' in data:
-        event.event_date = datetime.strptime(data['event_date'], '%Y-%m-%d').date()
-    if 'start_time' in data:
-        event.start_time = datetime.strptime(data['start_time'], '%H:%M:%S').time()
-    if 'end_time' in data:
-        event.end_time = datetime.strptime(data['end_time'], '%H:%M:%S').time()
-    event.capacity = data.get('capacity', event.capacity)
-    event.price = data.get('price', event.price)
-    event.latitude = data.get('latitude', event.latitude)
-    event.longitude = data.get('longitude', event.longitude)
-    event.address = data.get('address', event.address)
-    event.category = data.get('category', event.category)
-    event.status = data.get('status', event.status)
 
-    db.session.commit()
-    return {'message': 'Event updated', 'event': event.to_dict()}
+def create_event_controller():
+    try:
+        data = request.get_json()
 
-# -------------------- DELETE EVENT --------------------
-def delete_event(event_id):
-    event = Event.query.get_or_404(event_id)
-    db.session.delete(event)
-    db.session.commit()
-    return {'message': 'Event deleted'}
+        # Check if user exists
+        user = User.query.filter_by(user_id=data.get("user_id")).first()
+        if not user:
+            return jsonify({"error": "User does not exist"}), 404
+
+        # Create event
+        event = Event.create(data)
+
+        return jsonify({
+            "message": "Event created successfully",
+            "event": event.to_dict()
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 
+def get_all_events_controller():
+    try:
+        events = Event.get_all()
+        return jsonify([event.to_dict() for event in events]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+def get_event_by_id_controller(event_id):
+    try:
+        event = Event.get_by_id(event_id)
+
+        if not event:
+            return jsonify({"message": "Event not found"}), 404
+
+        return jsonify(event.to_dict()), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+def update_event_controller(event_id):
+    try:
+        event = Event.get_by_id(event_id)
+
+        if not event:
+            return jsonify({"message": "Event not found"}), 404
+
+        data = request.get_json()
+        updated_event = event.update(data)
+
+        return jsonify({
+            "message": "Event updated successfully",
+            "event": updated_event.to_dict()
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+def delete_event_controller(event_id):
+    try:
+        event = Event.get_by_id(event_id)
+
+        if not event:
+            return jsonify({"message": "Event not found"}), 404
+
+        event.delete()
+
+        return jsonify({"message": "Event deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
