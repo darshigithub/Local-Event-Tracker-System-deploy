@@ -30,7 +30,7 @@ def create_user_controller():
 
     return jsonify({
         "message": "User created successfully",
-        "user": new_user.to_dict()
+        "user": new_user.to_dict() 
     }), 201
 
 

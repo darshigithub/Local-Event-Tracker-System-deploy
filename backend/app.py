@@ -5,6 +5,7 @@ from database.connection import db
 from routes.user import user_bp
 from routes.booking import booking_bp
 from routes.review import review_bp
+from routes.event import event_bp
 
 app = Flask(__name__)
 
@@ -20,6 +21,7 @@ db.init_app(app)
 
 # Register Blueprints
 app.register_blueprint(user_bp, url_prefix="/api")
+app.register_blueprint(event_bp, url_prefix="/api")
 app.register_blueprint(booking_bp, url_prefix="/api")
 app.register_blueprint(review_bp, url_prefix="/api")
 
