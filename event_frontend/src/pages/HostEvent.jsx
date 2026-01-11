@@ -18,28 +18,25 @@ function HostEvent() {
     status: "active",
     address: "",
     gogle_map_link: "",
-    contact: ""
+    imageFile: null
   });
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [userId, setUserId] = useState(null);
+  const [token, setToken] = useState(null);
 
-  // ✅ Get user_id from localStorage when component mounts
+  // Load JWT token
   useEffect(() => {
-    const id = localStorage.getItem("user_id");
-    if (id) {
-      setUserId(parseInt(id));
+    const jwtToken = localStorage.getItem("access_token");
+    if (jwtToken) {
+      setToken(jwtToken);
     } else {
       setError("You must be logged in to create an event");
     }
   }, []);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -47,28 +44,47 @@ function HostEvent() {
     setError("");
     setSuccess("");
 
-    if (!userId) {
+    if (!token) {
       setError("You must be logged in to create an event");
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: userId,
-          ...formData,
-          capacity: parseInt(formData.capacity),
-          price: parseFloat(formData.price),
-          status: formData.status.toLowerCase()
-        })
+      const form = new FormData();
+
+      // Append all fields except image
+      Object.keys(formData).forEach((key) => {
+        if (key !== "imageFile") {
+          form.append(key, formData[key]);
+        }
       });
 
+      // Append image if selected
+      if (formData.imageFile) {
+        form.append("image", formData.imageFile);
+      }
+
+      console.log(formData.imageFile);
+      
+
+      // Send POST request with JWT token
+      const response = await fetch("http://localhost:5000/api/events", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, // JWT token in header
+        },
+        body: form
+      });
+
+      // Parse JSON response
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || data.error || "Failed to create event");
+        setError(data.error || "Failed to create event");
+        if (response.status === 401) {
+          localStorage.removeItem("jwt_token");
+          window.location.href = "/login"; // Redirect to login if token expired
+        }
         return;
       }
 
@@ -76,6 +92,7 @@ function HostEvent() {
       setTimeout(() => navigate("/dashboard"), 1500);
 
     } catch (err) {
+      console.error("Event creation error:", err);
       setError("Server error. Please try again later.");
     }
   };
@@ -93,6 +110,20 @@ function HostEvent() {
 
           <form onSubmit={handleSubmit}>
             <div className="row">
+
+              {/* Image Upload */}
+              <div className="col-12 mb-3">
+                <label className="form-label">Event Image</label>
+                <input
+                  type="file"
+                  className="form-control"
+                  accept="image/*"
+                  onChange={(e) =>
+                    setFormData({ ...formData, imageFile: e.target.files[0] })
+                  }
+                />
+              </div>
+
               {/* Title */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Title</label>
@@ -183,7 +214,6 @@ function HostEvent() {
                   type="number"
                   className="form-control"
                   name="capacity"
-                  placeholder="Total seats"
                   value={formData.capacity}
                   onChange={handleChange}
                   required
@@ -197,7 +227,6 @@ function HostEvent() {
                   type="number"
                   className="form-control"
                   name="price"
-                  placeholder="Ticket price"
                   value={formData.price}
                   onChange={handleChange}
                   required
@@ -227,40 +256,25 @@ function HostEvent() {
                   type="text"
                   className="form-control"
                   name="address"
-                  placeholder="City / Venue"
                   value={formData.address}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Google Maps */}
+              {/* Google Maps Link */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Google Maps Link</label>
                 <input
                   type="url"
                   className="form-control"
                   name="gogle_map_link"
-                  placeholder="Map link"
                   value={formData.gogle_map_link}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* Contact */}
-              <div className="col-12 mb-3">
-                <label className="form-label">Contact & Support</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="contact"
-                  placeholder="Email or Phone"
-                  value={formData.contact}
                   onChange={handleChange}
                 />
               </div>
             </div>
 
-            <button type="submit" className="btn btn-success w-100 mt-3" disabled={!userId}>
+            <button type="submit" className="btn btn-success w-100 mt-3">
               Publish Event
             </button>
           </form>

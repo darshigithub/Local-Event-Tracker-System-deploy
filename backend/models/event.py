@@ -5,12 +5,9 @@ class Event(db.Model):
     __tablename__ = "events"
 
     event_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("users.user_id", ondelete="CASCADE"),
-        nullable=False
-    )
+    image = db.Column(db.String(300))  
 
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
@@ -20,7 +17,7 @@ class Event(db.Model):
     end_time = db.Column(db.Time, nullable=False)
 
     capacity = db.Column(db.Integer, nullable=False)
-    available_seats = db.Column(db.Integer, nullable=False)  # ✅ Added
+    available_seats = db.Column(db.Integer, nullable=False)
 
     price = db.Column(db.Numeric(10, 2), nullable=False, default=0)
 
@@ -28,7 +25,6 @@ class Event(db.Model):
     address = db.Column(db.Text)
 
     category = db.Column(db.String(50))
-
     status = db.Column(
         db.String(20),
         db.CheckConstraint("status IN ('active', 'cancelled', 'completed')"),
@@ -37,9 +33,7 @@ class Event(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # -------------------------
-    # Convert model to dictionary
-    # -------------------------
+
     def to_dict(self):
         return {
             "event_id": self.event_id,
@@ -55,13 +49,12 @@ class Event(db.Model):
             "gogle_map_link": self.gogle_map_link,
             "address": self.address,
             "category": self.category,
-            "status": self.status,
+            "status": self.status, 
+            "image": self.image,
             "created_at": self.created_at.isoformat()
         }
 
-    # -------------------------
-    # Create a new event
-    # -------------------------
+
     @classmethod
     def create(cls, data):
         event = cls(
@@ -71,45 +64,38 @@ class Event(db.Model):
             event_date=data["event_date"],
             start_time=data["start_time"],
             end_time=data["end_time"],
-            capacity=data["capacity"],
-            available_seats=data["capacity"],  # initially same as capacity
+            capacity=int(data["capacity"]),
+            available_seats=int(data["capacity"]),
             price=data["price"],
-            gogle_map_link=data.get("gogle_map_link"),  # ✅ corrected
-            address=data.get("address"),                # ✅ corrected
+            gogle_map_link=data.get("gogle_map_link"),
+            address=data.get("address"),
             category=data.get("category"),
-            status="active"
+            image=data.get("image"),
         )
+
         db.session.add(event)
         db.session.commit()
         return event
 
-    # -------------------------
-    # Get event by ID
-    # -------------------------
+
     @classmethod
     def get_by_id(cls, event_id):
         return cls.query.filter_by(event_id=event_id).first()
 
-    # -------------------------
-    # Get all events
-    # -------------------------
+
     @classmethod
     def get_all(cls):
         return cls.query.all()
 
-    # -------------------------
-    # Update event
-    # -------------------------
+
     def update(self, data):
         for key, value in data.items():
             setattr(self, key, value)
+
         db.session.commit()
         return self
 
-    # -------------------------
-    # Delete event
-    # -------------------------
+
     def delete(self):
         db.session.delete(self)
         db.session.commit()
-
