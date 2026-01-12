@@ -1,27 +1,23 @@
 from flask import Blueprint
 from controllers.user import (
     create_user_controller,
-    update_user_controller,
+    login_user_controller,
+    refresh_token_controller,
+    get_user_controller,
     get_all_users_controller,
-    login_user_controller
+    update_user_controller,
+    delete_user_controller
 )
 
 user_bp = Blueprint("user_bp", __name__)
 
-@user_bp.route("/users", methods=["POST"])
-def create_user():
-    return create_user_controller() 
+# ------------------- AUTH -------------------
+user_bp.route("/users", methods=["POST"])(create_user_controller)   # Signup
+user_bp.route("/login", methods=["POST"])(login_user_controller)    # Login
+user_bp.route("/refresh", methods=["POST"])(refresh_token_controller)  # Refresh access token
 
-@user_bp.route("/login", methods=["POST"])
-def login_user():
-    return login_user_controller()
-
-
-@user_bp.route("/users/<int:user_id>", methods=["PUT"])
-def update_user(user_id):
-    return update_user_controller(user_id)
-
-
-@user_bp.route("/users", methods=["GET"])
-def get_all_users():
-    return get_all_users_controller()
+# ------------------- USER CRUD -------------------
+user_bp.route("/users/<int:user_id>", methods=["GET"])(get_user_controller)
+user_bp.route("/users", methods=["GET"])(get_all_users_controller)
+user_bp.route("/users/<int:user_id>", methods=["PUT"])(update_user_controller)
+user_bp.route("/users/<int:user_id>", methods=["DELETE"])(delete_user_controller)
