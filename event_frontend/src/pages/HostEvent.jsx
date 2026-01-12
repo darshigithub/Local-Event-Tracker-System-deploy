@@ -9,7 +9,7 @@ function HostEvent() {
   const [formData, setFormData] = useState({ 
     title: "",
     description: "",
-    category: "",
+    category: "", 
     start_time: "",
     end_time: "",
     event_date: "",
@@ -17,7 +17,7 @@ function HostEvent() {
     price: "",
     status: "active",
     address: "",
-    gogle_map_link: "",
+    gogle_map_link: "", 
     imageFile: null
   });
 
