@@ -4,7 +4,7 @@ from datetime import date
 
 from datetime import datetime
 
-class Payment(db.Model):
+class Payment(db.Model): 
 
     __tablename__ = "payments"
  

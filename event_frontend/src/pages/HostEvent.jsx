@@ -6,10 +6,10 @@ import Footer from "../components/Footer";
 function HostEvent() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({ 
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "", 
+    category: "",
     start_time: "",
     end_time: "",
     event_date: "",
@@ -17,7 +17,7 @@ function HostEvent() {
     price: "",
     status: "active",
     address: "",
-    gogle_map_link: "", 
+    gogle_map_link: "",
     imageFile: null
   });
 
@@ -65,7 +65,7 @@ function HostEvent() {
       }
 
       console.log(formData.imageFile);
-      
+
 
       // Send POST request with JWT token
       const response = await fetch("http://localhost:5000/api/events", {
@@ -77,7 +77,7 @@ function HostEvent() {
       });
 
       // Parse JSON response
-      const data = await response.json(); 
+      const data = await response.json();
 
       if (!response.ok) {
         setError(data.error || "Failed to create event");
@@ -109,7 +109,7 @@ function HostEvent() {
           {success && <div className="alert alert-success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
-            <div className="row"> 
+            <div className="row">
 
               {/* Image Upload */}
               <div className="col-12 mb-3">
@@ -119,10 +119,11 @@ function HostEvent() {
                   className="form-control"
                   accept="image/*"
                   onChange={(e) =>
-                    setFormData({ ...formData, imageFile: e.target.files[0] })
+                    setFormData({ ...formData, image: e.target.files[0] })
                   }
                 />
               </div>
+
 
               {/* Title */}
               <div className="col-md-6 mb-3">
