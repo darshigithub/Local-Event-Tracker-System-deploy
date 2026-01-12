@@ -129,6 +129,7 @@ function Dashboard() {
       </div>
 
       <Footer />
+      
     </>
   );
 }
