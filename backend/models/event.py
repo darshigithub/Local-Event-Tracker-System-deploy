@@ -7,7 +7,7 @@ class Event(db.Model):
     event_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
 
-    image = db.Column(db.String(300))  
+    image = db.Column(db.LargeBinary) 
 
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)

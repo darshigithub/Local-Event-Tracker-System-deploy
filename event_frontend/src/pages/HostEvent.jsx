@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 function HostEvent() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({ 
     title: "",
     description: "",
     category: "",
@@ -77,7 +77,7 @@ function HostEvent() {
       });
 
       // Parse JSON response
-      const data = await response.json();
+      const data = await response.json(); 
 
       if (!response.ok) {
         setError(data.error || "Failed to create event");
@@ -109,7 +109,7 @@ function HostEvent() {
           {success && <div className="alert alert-success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
-            <div className="row">
+            <div className="row"> 
 
               {/* Image Upload */}
               <div className="col-12 mb-3">

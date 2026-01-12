@@ -113,7 +113,7 @@ def get_event_by_id_controller(event_id):
         return jsonify({"event": event.to_dict()}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)}), 400  
 
 
 # ---------------------------

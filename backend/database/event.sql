@@ -1,14 +1,14 @@
 CREATE TABLE events (
-    image TEXT;
+    image bytea not null,
     event_id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(user_id) ON DELETE CASCADE, 
 
     title VARCHAR(200) NOT NULL,
     description TEXT,
  
     event_date DATE NOT NULL,
     start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
+    end_time TIME NOT NULL, 
  
     capacity INT NOT NULL,
     price NUMERIC(10,2) NOT NULL DEFAULT 0,

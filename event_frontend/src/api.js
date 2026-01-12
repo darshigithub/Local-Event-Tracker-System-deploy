@@ -2,15 +2,15 @@
 const API_URL = "http://localhost:5000/api";
 
 // ----------------- Token Helpers -----------------
-export const getAccessToken = () => localStorage.getItem("access_token");
-export const getRefreshToken = () => localStorage.getItem("refresh_token");
+export const getAccessToken = () => localStorage.getItem("access_token"); 
+export const getRefreshToken = () => localStorage.getItem("refresh_token"); 
 
 export const saveTokens = ({ access_token, refresh_token }) => {
   if (access_token) localStorage.setItem("access_token", access_token);
   if (refresh_token) localStorage.setItem("refresh_token", refresh_token);
-};
+}; 
 
-// Clear all user data and tokens
+// Clear all user data and tokens 
 export const logoutUser = () => {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
