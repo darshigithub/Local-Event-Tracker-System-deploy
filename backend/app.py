@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 CORS(app)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:Meghanars%40274@localhost:5432/event_reg"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:root@localhost:5432/event"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # JWT Configuration
