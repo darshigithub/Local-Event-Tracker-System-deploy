@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION update_booking_status_after_payment()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.payment_status = 'SUCCESS' THEN
+    IF NEW.payment_status = 'SUCCESS' THEN 
         UPDATE bookings
         SET booking_status = 'CONFIRMED'
         WHERE booking_id = NEW.booking_id;
@@ -20,4 +20,4 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_update_booking_status
 AFTER INSERT ON payments
 FOR EACH ROW
-EXECUTE FUNCTION update_booking_status_after_payment(); 
+EXECUTE FUNCTION update_booking_status_after_payment();  

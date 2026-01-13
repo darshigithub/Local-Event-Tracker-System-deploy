@@ -36,6 +36,10 @@ class Event(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
+        image_base64 = None
+        if self.image:
+            image_base64 = base64.b64encode(self.image).decode("utf-8")
+
         return {
             "event_id": self.event_id,
             "user_id": self.user_id,
@@ -51,10 +55,10 @@ class Event(db.Model):
             "address": self.address,
             "category": self.category,
             "status": self.status,
-            # Convert bytea → base64 string
-            "image": base64.b64encode(self.image).decode("utf-8"),
+            "image": f"data:image/jpeg;base64,{image_base64}" if image_base64 else None,
             "created_at": self.created_at.isoformat()
         }
+
 
     @classmethod
     def create(cls, data, image_file=None):
@@ -101,3 +105,5 @@ class Event(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
+    

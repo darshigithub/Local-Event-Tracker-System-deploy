@@ -4,6 +4,7 @@ from models.event import Event
 from models.user import User
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from datetime import datetime
+from database.connection import db
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
@@ -17,54 +18,47 @@ def allowed_file(filename):
 # ---------------------------------------------------------
 @jwt_required()
 def create_event_controller():
-    try:
-        user_id = get_jwt_identity()
+    user_id = get_jwt_identity()
 
-        # Validate user
-        user = User.query.filter_by(user_id=user_id).first()
-        if not user:
-            return jsonify({"error": "User does not exist"}), 404
+    # Read file
+    image_file = request.files.get("image")
+    image_data = image_file.read() if image_file else None
 
-        # Read form fields
-        data = request.form.to_dict()
+    # Normal form fields
+    title = request.form.get("title")
+    description = request.form.get("description")
+    category = request.form.get("category")
+    event_date = request.form.get("event_date")
+    start_time = request.form.get("start_time")
+    end_time = request.form.get("end_time")
+    capacity = request.form.get("capacity")
+    price = request.form.get("price")
+    address = request.form.get("address")
+    google_map_link = request.form.get("gogle_map_link")
+    status = request.form.get("status", "active")
 
-        # Convert required fields
-        if "event_date" in data:
-            data["event_date"] = datetime.strptime(data["event_date"], "%Y-%m-%d").date()
+    new_event = Event(
+        user_id=user_id,
+        image=image_data,
+        title=title,
+        description=description,
+        event_date=event_date,
+        start_time=start_time,
+        end_time=end_time,
+        capacity=capacity,
+        available_seats=capacity,
+        price=price,
+        google_map_link=google_map_link,
+        address=address,
+        category=category,
+        status=status,
+        created_at=datetime.utcnow(),
+    )
 
-        if "start_time" in data:
-            data["start_time"] = datetime.strptime(data["start_time"], "%H:%M").time()
+    db.session.add(new_event)
+    db.session.commit() 
 
-        if "end_time" in data:
-            data["end_time"] = datetime.strptime(data["end_time"], "%H:%M").time()
-
-        data["capacity"] = int(data.get("capacity", 0))
-        data["price"] = float(data.get("price", 0.0))
-        data["user_id"] = user_id
-
-        # ----- Handle Image -----
-        image_file = request.files.get("image")
-        if not image_file:
-            return jsonify({"error": "Image file is required"}), 400
-
-        if not allowed_file(image_file.filename):
-            return jsonify({"error": "Invalid image format"}), 400
-
-        # Convert image to bytes
-        image_bytes = image_file.read()
-
-        # Create event
-        event = Event.create(data, image_file=image_file)
-
-        return jsonify({
-            "message": "Event created successfully",
-            "event": event.to_dict()
-        }), 201
-
-    except Exception as e:
-        print("EVENT CREATE ERROR:", e)
-        return jsonify({"error": str(e)}), 500
-
+    return jsonify({"message": "Event created", "event_id": new_event.event_id}), 201
 
 # ---------------------------------------------------------
 # GET ALL EVENTS
@@ -154,3 +148,6 @@ def delete_event_controller(event_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+
