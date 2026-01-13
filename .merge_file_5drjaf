@@ -73,4 +73,8 @@ def delete_payment(payment_id):
     db.session.commit()
     return {"message": "Payment deleted successfully"}, 200
  
+<<<<<<< .merge_file_5drjaf
  
+=======
+ 
+>>>>>>> .merge_file_Y9D88Y

@@ -23,3 +23,9 @@ Thumbs.db
 
 # Vite cache
 event_frontend/.vite/
+
+node_modules/
+__pycache__/
+*.pyc
+.merge_file_*
+
