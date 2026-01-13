@@ -9,7 +9,7 @@ function Navbar() {
     const accessToken = localStorage.getItem("access_token");
     const userId = localStorage.getItem("user_id");
     const username = localStorage.getItem("user_name");
-    const profilePic = localStorage.getItem("profile_pic"); // optional 
+    const profilePic = localStorage.getItem("profile_pic");
 
     if (accessToken && userId && username) {
       setUser({ userId, username, profilePic });
@@ -19,7 +19,6 @@ function Navbar() {
   }, []);
 
   const handleLogout = () => {
-    // Remove tokens and user info
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user_id");
@@ -37,19 +36,25 @@ function Navbar() {
     }
   };
 
-  return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm px-4 py-2">
-      {/* Logo */}
-      <Link className="navbar-brand d-flex align-items-center fw-bold" to="/">
-        <img
-          src="https://logodix.com/logo/2045192.png"
-          alt="logo"
-          className="me-2 rounded-circle"
-          style={{ width: "50px", height: "50px", objectFit: "cover" }}
-        />
-        Event Organizer
-      </Link>
+  // Shared style for links and dropdown items
+  const linkStyle = { color: "#007bff" };
 
+  return (
+    <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4 py-2">
+      {/* Logo */}
+      <Link
+        className="navbar-brand d-flex align-items-center fw-bold"
+        to="/"
+        style={{ color: "#007bff" }}
+      >
+        <img
+          src="https://i.postimg.cc/c6mRFy7y/Vibrant-sw-irling-gradient-logo.png"
+          alt="logo"
+          className="me-2"
+          style={{ width: "60px", height: "60px", objectFit: "cover" }}
+        />
+        <span>EventSphere</span>
+      </Link>
 
       {/* Toggler for mobile */}
       <button
@@ -68,16 +73,24 @@ function Navbar() {
       <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
         <ul className="navbar-nav align-items-center">
           <li className="nav-item">
-            <Link className="nav-link" to="/">Home</Link>
+            <Link className="nav-link" to="/" style={linkStyle}>
+              Home
+            </Link>
           </li>
           <li className="nav-item">
-            <a className="nav-link" href="/#gallery">Gallery</a>
+            <a className="nav-link" href="/#gallery" style={linkStyle}>
+              Gallery
+            </a>
           </li>
           <li className="nav-item">
-            <a className="nav-link" href="/#services">Services</a>
+            <a className="nav-link" href="/#services" style={linkStyle}>
+              Services
+            </a>
           </li>
           <li className="nav-item">
-            <Link className="nav-link" to="/dashboard">Dashboard</Link>
+            <Link className="nav-link" to="/dashboard" style={linkStyle}>
+              Dashboard
+            </Link>
           </li>
 
           {user ? (
@@ -89,28 +102,29 @@ function Navbar() {
                 role="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
+                style={{ color: "#007bff" }}
               >
                 <img
                   src={
                     user.profilePic ||
-                    "https://png.pngtree.com/png-clipart/20230927/original/pngtree-man-avatar-image-for-profile-png-image_13001877.png"
+                    "https://cdn-icons-png.flaticon.com/512/847/847969.png"
                   }
                   alt="profile"
                   className="rounded-circle me-2"
-                  style={{ width: "35px", height: "35px", objectFit: "cover" }}
+                  style={{ width: "30px", height: "30px", objectFit: "cover" }}
                 />
                 {user.username}
               </a>
 
               <ul className="dropdown-menu dropdown-menu-end">
                 <li>
-                  <Link className="dropdown-item" to="/host">
-                    ➕ Create Event
+                  <Link className="dropdown-item" to="/host" style={linkStyle}>
+                    Create Event
                   </Link>
                 </li>
                 <li>
-                  <Link className="dropdown-item" to="/profile">
-                    🧾 Profile
+                  <Link className="dropdown-item" to="/profile" style={linkStyle}>
+                    Profile
                   </Link>
                 </li>
                 <li>
@@ -121,7 +135,7 @@ function Navbar() {
                     className="dropdown-item text-danger"
                     onClick={handleLogout}
                   >
-                    🚪 Logout
+                    Logout
                   </button>
                 </li>
               </ul>
@@ -135,6 +149,7 @@ function Navbar() {
                 role="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
+                style={{ color: "#007bff" }}
               >
                 Account
               </a>
@@ -144,6 +159,7 @@ function Navbar() {
                   <button
                     className="dropdown-item"
                     onClick={() => handleLoginSignupClick("/login")}
+                    style={{ color: "#007bff" }}
                   >
                     Login
                   </button>
@@ -152,6 +168,7 @@ function Navbar() {
                   <button
                     className="dropdown-item"
                     onClick={() => handleLoginSignupClick("/signup")}
+                    style={{ color: "#007bff" }}
                   >
                     Signup
                   </button>

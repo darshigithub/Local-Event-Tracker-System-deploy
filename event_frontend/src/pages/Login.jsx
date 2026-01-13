@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import { Link, useNavigate } from "react-router-dom";
 import { saveTokens } from "../api";
 
 function Login() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
+
   const [error, setError] = useState("");
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,43 +24,106 @@ function Login() {
       const res = await fetch("http://localhost:5000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email, password: formData.password })
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.message || "Login failed"); return; }
 
-      // Save tokens
-      saveTokens({ access_token: data.access_token, refresh_token: data.refresh_token });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Login failed");
+        return;
+      }
+
+      saveTokens({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token
+      });
 
       localStorage.setItem("user_id", data.user.user_id);
       localStorage.setItem("user_name", data.user.name);
 
       navigate("/dashboard");
+
     } catch (err) {
       setError("Server error. Please try again later.");
     }
   };
 
   return (
-    <>
-      <Navbar />
-      <div className="container my-5">
-        <div className="row justify-content-center">
-          <div className="col-md-5">
-            <div className="card shadow-lg border-0 rounded-3 p-4">
-              <h2 className="text-center mb-4 text-primary">Login</h2>
-              {error && <div className="alert alert-danger">{error}</div>}
-              <form onSubmit={handleSubmit}>
-                <input type="email" name="email" placeholder="Email" className="form-control mb-3" value={formData.email} onChange={handleChange} required/>
-                <input type="password" name="password" placeholder="Password" className="form-control mb-3" value={formData.password} onChange={handleChange} required/>
-                <button type="submit" className="btn btn-primary w-100 py-2">Login</button>
-              </form>
-            </div>
-          </div>
+    <div
+      className="d-flex align-items-center justify-content-center"
+      style={{ minHeight: "100vh", background: "#f3f4f6" }}
+    >
+      <div className="card shadow-lg border-0 p-4" style={{ width: "420px" }}>
+
+        {/* ⭐ Logo Section */}
+        <div className="text-center mb-3">
+          <img
+            src="https://i.postimg.cc/c6mRFy7y/Vibrant-sw-irling-gradient-logo.png"
+            alt="EventSphere"
+            style={{
+              width: "60px",
+              height: "60px",
+              borderRadius: "50%",
+              objectFit: "cover"
+            }}
+          />
+          <h4 className="mt-2 fw-bold text-primary">EventSphere</h4>
         </div>
+
+        {error && <div className="alert alert-danger">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          {/* Email */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Email</label>
+            <input
+              type="email"
+              name="email"
+              className="form-control rounded-3"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* Password */}
+          <div className="mb-4">
+            <label className="form-label fw-semibold">Password</label>
+            <input
+              type="password"
+              name="password"
+              className="form-control rounded-3"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* Login Button */}
+          <button
+            type="submit"
+            className="btn btn-primary w-100 py-2 rounded-3 fw-semibold"
+          >
+            Login
+          </button>
+        </form>
+
+        {/* Signup Link */}
+        <div className="text-center mt-4 border-top pt-3">
+          <span className="text-muted">
+            New user?{" "}
+            <Link to="/signup" className="fw-semibold text-decoration-none">
+              Register
+            </Link>
+          </span>
+        </div>
+
       </div>
-      <Footer />
-    </>
+    </div>
   );
 }
 
