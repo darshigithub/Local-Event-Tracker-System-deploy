@@ -1,4 +1,4 @@
-import Navbar from "../components/Navbar";
+git  Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
