@@ -36,8 +36,8 @@ function Navbar() {
     }
   };
 
-  // Shared style for links and dropdown items
-  const linkStyle = { color: "#007bff" };
+  // Shared style for links and dropdown items - Klook orange theme
+  const linkStyle = { color: "#ff5722" };
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4 py-2">
@@ -45,7 +45,7 @@ function Navbar() {
       <Link
         className="navbar-brand d-flex align-items-center fw-bold"
         to="/"
-        style={{ color: "#007bff" }}
+        style={{ color: "#ff5722" }}
       >
         <img
           src="https://i.postimg.cc/c6mRFy7y/Vibrant-sw-irling-gradient-logo.png"
@@ -53,7 +53,9 @@ function Navbar() {
           className="me-2"
           style={{ width: "60px", height: "60px", objectFit: "cover" }}
         />
-        <span>EventSphere</span>
+        <span style={{ color: "#007bff", fontWeight: "bold", fontSize: "1.25rem" }}>
+          EventSphere
+        </span>
       </Link>
 
       {/* Toggler for mobile */}
@@ -73,24 +75,19 @@ function Navbar() {
       <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
         <ul className="navbar-nav align-items-center">
           <li className="nav-item">
-            <Link className="nav-link" to="/" style={linkStyle}>
+            <Link className="nav-link fw-semibold" to="/" style={linkStyle}>
               Home
             </Link>
           </li>
           <li className="nav-item">
-            <a className="nav-link" href="/#gallery" style={linkStyle}>
-              Gallery
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="/#services" style={linkStyle}>
-              Services
-            </a>
-          </li>
-          <li className="nav-item">
-            <Link className="nav-link" to="/dashboard" style={linkStyle}>
-              Dashboard
+            <Link className="nav-link fw-semibold" to="/dashboard" style={linkStyle}>
+              Things to Do
             </Link>
+          </li>
+          <li className="nav-item">
+            <a className="nav-link fw-semibold" href="/#services" style={linkStyle}>
+              Categories
+            </a>
           </li>
 
           {user ? (
@@ -102,7 +99,7 @@ function Navbar() {
                 role="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
-                style={{ color: "#007bff" }}
+                style={{ color: "#ff5722" }}
               >
                 <img
                   src={
@@ -149,7 +146,7 @@ function Navbar() {
                 role="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
-                style={{ color: "#007bff" }}
+                style={{ color: "#ff5722" }}
               >
                 Account
               </a>
@@ -159,7 +156,7 @@ function Navbar() {
                   <button
                     className="dropdown-item"
                     onClick={() => handleLoginSignupClick("/login")}
-                    style={{ color: "#007bff" }}
+                    style={{ color: "#ff5722" }}
                   >
                     Login
                   </button>
@@ -168,7 +165,7 @@ function Navbar() {
                   <button
                     className="dropdown-item"
                     onClick={() => handleLoginSignupClick("/signup")}
-                    style={{ color: "#007bff" }}
+                    style={{ color: "#ff5722" }}
                   >
                     Signup
                   </button>

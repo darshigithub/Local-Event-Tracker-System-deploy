@@ -21,7 +21,7 @@ function App() {
         <Route path="/booking/:eventId" element={<Booking />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/event/:eventId" element={<EventDetails />} />
-        <Route path="/payment" element={<Payment />} />
+        <Route path="/payment" element={<Payment />} /> 
       </Routes>
     </Router>
   );
