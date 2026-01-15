@@ -56,7 +56,12 @@ export const fetchWithAuth = async (url, options = {}) => {
 
   options.headers = options.headers || {};
   options.headers["Authorization"] = `Bearer ${access_token}`;
-  options.headers["Content-Type"] = "application/json";
+  
+  // Only set Content-Type for non-FormData requests
+  // FormData needs browser to set Content-Type with boundary automatically
+  if (!(options.body instanceof FormData)) {
+    options.headers["Content-Type"] = "application/json";
+  }
 
   let res = await fetch(url, options);
   let data;

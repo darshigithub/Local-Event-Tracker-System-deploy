@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { fetchWithAuth } from "../api";
 
 function HostEvent() {
   const navigate = useNavigate();
@@ -15,28 +16,21 @@ function HostEvent() {
     event_date: "",
     capacity: "",
     price: "",
-    status: "active",
     address: "",
-    gogle_map_link: "",
+    google_map_link: "",
     imageFile: null
   });
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [token, setToken] = useState(null);
 
-  // Load JWT token
-  useEffect(() => {
-    const jwtToken = localStorage.getItem("access_token");
-    if (jwtToken) {
-      setToken(jwtToken);
-    } else {
-      setError("You must be logged in to create an event");
-    }
-  }, []);
-
+  // ---------------- HANDLERS ----------------
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleImageChange = (e) => {
+    setFormData({ ...formData, imageFile: e.target.files[0] });
   };
 
   const handleSubmit = async (e) => {
@@ -44,59 +38,53 @@ function HostEvent() {
     setError("");
     setSuccess("");
 
-    if (!token) {
-      setError("You must be logged in to create an event");
+    // 🔥 HARD VALIDATION (prevents DB crash)
+    if (!formData.imageFile) {
+      setError("Event image is required");
       return;
     }
 
     try {
       const form = new FormData();
 
-      // Append all fields except image
-      Object.keys(formData).forEach((key) => {
-        if (key !== "imageFile") {
-          form.append(key, formData[key]);
+      form.append("title", formData.title);
+      form.append("description", formData.description);
+      form.append("category", formData.category);
+      form.append("start_time", formData.start_time);
+      form.append("end_time", formData.end_time);
+      form.append("event_date", formData.event_date);
+      form.append("capacity", formData.capacity);
+      form.append("price", formData.price);
+      form.append("address", formData.address);
+      form.append("google_map_link", formData.google_map_link);
+
+      // ✅ MUST MATCH backend key
+      form.append("image", formData.imageFile);
+
+      const res = await fetchWithAuth(
+        "http://localhost:5000/api/events",
+        {
+          method: "POST",
+          body: form
+          // ❌ DO NOT add Content-Type
         }
-      });
+      );
 
-      // Append image if selected
-      if (formData.imageFile) {
-        form.append("image", formData.imageFile);
-      }
-
-      console.log(formData.imageFile);
-
-
-      // Send POST request with JWT token
-      const response = await fetch("http://localhost:5000/api/events", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`, // JWT token in header
-        },
-        body: form
-      });
-
-      // Parse JSON response
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Failed to create event");
-        if (response.status === 401) {
-          localStorage.removeItem("jwt_token");
-          window.location.href = "/login"; // Redirect to login if token expired
-        }
+      if (!res.ok) {
+        setError(res.data?.error || "Failed to create event");
         return;
       }
 
-      setSuccess("Event created successfully!");
+      setSuccess("Event created successfully 🎉");
       setTimeout(() => navigate("/dashboard"), 1500);
 
     } catch (err) {
-      console.error("Event creation error:", err);
-      setError("Server error. Please try again later.");
+      console.error(err);
+      setError("Server error. Please try again.");
     }
   };
 
+  // ---------------- UI ----------------
   return (
     <>
       <Navbar />
@@ -111,19 +99,17 @@ function HostEvent() {
           <form onSubmit={handleSubmit}>
             <div className="row">
 
-              {/* Image Upload */}
+              {/* Image */}
               <div className="col-12 mb-3">
                 <label className="form-label">Event Image</label>
                 <input
                   type="file"
                   className="form-control"
                   accept="image/*"
-                  onChange={(e) =>
-                    setFormData({ ...formData, image: e.target.files[0] })
-                  }
+                  onChange={handleImageChange}
+                  required
                 />
               </div>
-
 
               {/* Title */}
               <div className="col-md-6 mb-3">
@@ -132,7 +118,6 @@ function HostEvent() {
                   type="text"
                   className="form-control"
                   name="title"
-                  placeholder="Event Title"
                   value={formData.title}
                   onChange={handleChange}
                   required
@@ -163,14 +148,14 @@ function HostEvent() {
                 <label className="form-label">Description</label>
                 <textarea
                   className="form-control"
-                  rows="3"
                   name="description"
+                  rows="3"
                   value={formData.description}
                   onChange={handleChange}
-                ></textarea>
+                />
               </div>
 
-              {/* Start/End Time */}
+              {/* Times */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Start Time</label>
                 <input
@@ -234,22 +219,6 @@ function HostEvent() {
                 />
               </div>
 
-              {/* Status */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Status</label>
-                <select
-                  className="form-select"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="active">Active</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-
               {/* Address */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Location</label>
@@ -262,14 +231,14 @@ function HostEvent() {
                 />
               </div>
 
-              {/* Google Maps Link */}
+              {/* Google Map */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Google Maps Link</label>
                 <input
                   type="url"
                   className="form-control"
-                  name="gogle_map_link"
-                  value={formData.gogle_map_link}
+                  name="google_map_link"
+                  value={formData.google_map_link}
                   onChange={handleChange}
                 />
               </div>

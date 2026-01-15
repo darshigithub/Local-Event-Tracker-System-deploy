@@ -18,47 +18,71 @@ def allowed_file(filename):
 # ---------------------------------------------------------
 @jwt_required()
 def create_event_controller():
-    user_id = get_jwt_identity()
+    try:
+        user_id = get_jwt_identity()
 
-    # Read file
-    image_file = request.files.get("image")
-    image_data = image_file.read() if image_file else None
+        # Read file
+        image_file = request.files.get("image")
+        image_data = image_file.read() if image_file else None
 
-    # Normal form fields
-    title = request.form.get("title")
-    description = request.form.get("description")
-    category = request.form.get("category")
-    event_date = request.form.get("event_date")
-    start_time = request.form.get("start_time")
-    end_time = request.form.get("end_time")
-    capacity = request.form.get("capacity")
-    price = request.form.get("price")
-    address = request.form.get("address")
-    google_map_link = request.form.get("gogle_map_link")
-    status = request.form.get("status", "active")
+        # Normal form fields
+        title = request.form.get("title")
+        description = request.form.get("description")
+        category = request.form.get("category")
+        event_date_str = request.form.get("event_date")
+        start_time_str = request.form.get("start_time")
+        end_time_str = request.form.get("end_time")
+        capacity = request.form.get("capacity")
+        price = request.form.get("price")
+        address = request.form.get("address")
+        google_map_link = request.form.get("google_map_link")
+        status = request.form.get("status", "active")
 
-    new_event = Event(
-        user_id=user_id,
-        image=image_data,
-        title=title,
-        description=description,
-        event_date=event_date,
-        start_time=start_time,
-        end_time=end_time,
-        capacity=capacity,
-        available_seats=capacity,
-        price=price,
-        google_map_link=google_map_link,
-        address=address,
-        category=category,
-        status=status,
-        created_at=datetime.utcnow(),
-    )
+        # Parse date and time strings
+        event_date = datetime.strptime(event_date_str, "%Y-%m-%d").date()
+        start_time = datetime.strptime(start_time_str, "%H:%M").time()
+        end_time = datetime.strptime(end_time_str, "%H:%M").time()
 
-    db.session.add(new_event)
-    db.session.commit() 
+        # Compute event_end_at for Redis TTL
+        event_end_at = datetime.combine(event_date, end_time)
 
-    return jsonify({"message": "Event created", "event_id": new_event.event_id}), 201
+        new_event = Event(
+            user_id=user_id,
+            image=image_data,
+            title=title,
+            description=description,
+            event_date=event_date,
+            start_time=start_time,
+            end_time=end_time,
+            event_end_at=event_end_at,
+            capacity=int(capacity) if capacity else 0,
+            available_seats=int(capacity) if capacity else 0,
+            price=price if price else 0,
+            google_map_link=google_map_link,
+            address=address,
+            category=category,
+            status=status,
+            created_at=datetime.utcnow(),
+        )
+
+        db.session.add(new_event)
+        db.session.commit()
+
+        # Set Redis TTL for event status
+        from cache.redis_client import redis_client
+        ttl_seconds = int((event_end_at - datetime.utcnow()).total_seconds())
+        if ttl_seconds > 0:
+            redis_client.setex(
+                f"event_status:{new_event.event_id}",
+                ttl_seconds,
+                "active"
+            )
+
+        return jsonify({"message": "Event created", "event_id": new_event.event_id}), 201
+
+    except Exception as e:
+        print("CREATE EVENT ERROR:", e)
+        return jsonify({"error": str(e)}), 500
 
 # ---------------------------------------------------------
 # GET ALL EVENTS

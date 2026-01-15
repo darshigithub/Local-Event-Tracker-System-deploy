@@ -1,5 +1,6 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required
+
 from controllers.event import (
     create_event_controller,
     get_all_events_controller,
@@ -11,7 +12,6 @@ from controllers.event import (
 event_bp = Blueprint("event", __name__)
 
 @event_bp.route("/events", methods=["POST"])
-@jwt_required()
 def create_event():
     return create_event_controller()
 
