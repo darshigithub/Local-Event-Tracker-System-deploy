@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { saveTokens } from "../api";
 
 function Signup() {
   const navigate = useNavigate();
@@ -30,7 +29,7 @@ function Signup() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/users", {
+      const res = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -40,23 +39,14 @@ function Signup() {
         })
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const data = await res.json();
         setError(data.message || "Registration failed");
         return;
       }
 
-      saveTokens({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token
-      });
-
-      localStorage.setItem("user_id", data.user.user_id);
-      localStorage.setItem("user_name", data.user.name);
-
-      setSuccess("Registration successful! Redirecting...");
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setSuccess("Registration successful! Redirecting to login...");
+      setTimeout(() => navigate("/login"), 2000);
 
     } catch (err) {
       setError("Server error. Please try again later.");
@@ -70,7 +60,7 @@ function Signup() {
     >
       <div className="card shadow-lg border-0 p-4" style={{ width: "420px" }}>
 
-        {/* ⭐ Logo Section */}
+        {/* Logo */}
         <div className="text-center mb-3">
           <img
             src="https://i.postimg.cc/c6mRFy7y/Vibrant-sw-irling-gradient-logo.png"
@@ -130,9 +120,7 @@ function Signup() {
 
           {/* Confirm Password */}
           <div className="mb-4">
-            <label className="form-label fw-semibold">
-              Confirm Password
-            </label>
+            <label className="form-label fw-semibold">Confirm Password</label>
             <input
               type="password"
               name="confirmPassword"
@@ -143,7 +131,6 @@ function Signup() {
             />
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             className="btn btn-primary w-100 py-2 rounded-3 fw-semibold"
@@ -155,7 +142,7 @@ function Signup() {
         {/* Login Link */}
         <div className="text-center mt-4 border-top pt-3">
           <span className="text-muted">
-            Already existing user?{" "}
+            Already a user?{" "}
             <Link to="/login" className="fw-semibold text-decoration-none">
               Login
             </Link>

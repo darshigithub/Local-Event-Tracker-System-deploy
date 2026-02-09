@@ -21,29 +21,30 @@ function Login() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/login", {
+      const res = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON.stringify({ 
           email: formData.email,
           password: formData.password
-        })
+        }) 
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "Login failed");
+        setError(data.message || "Invalid email or password");
         return;
       }
 
-      saveTokens({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token
-      });
-
-      localStorage.setItem("user_id", data.user.user_id);
-      localStorage.setItem("user_name", data.user.name);
+      // ✅ Save JWT token - handle both single token and access_token format
+      if (data.access_token) {
+        saveTokens({ access_token: data.access_token, refresh_token: data.refresh_token });
+      } else if (data.token) {
+        // Fallback for backend returning 'token' field
+        saveTokens({ access_token: data.token });
+        localStorage.setItem("token", data.token);
+      }
 
       navigate("/dashboard");
 
@@ -59,7 +60,7 @@ function Login() {
     >
       <div className="card shadow-lg border-0 p-4" style={{ width: "420px" }}>
 
-        {/* ⭐ Logo Section */}
+        {/* Logo */}
         <div className="text-center mb-3">
           <img
             src="https://i.postimg.cc/c6mRFy7y/Vibrant-sw-irling-gradient-logo.png"
@@ -103,7 +104,6 @@ function Login() {
             />
           </div>
 
-          {/* Login Button */}
           <button
             type="submit"
             className="btn btn-primary w-100 py-2 rounded-3 fw-semibold"

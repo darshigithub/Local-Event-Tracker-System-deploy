@@ -10,15 +10,13 @@ function HostEvent() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "",
-    start_time: "",
-    end_time: "",
-    event_date: "",
-    capacity: "",
+    eventDate: "",
+    startTime: "",
+    endTime: "",
+    totalSeats: "",
     price: "",
-    address: "",
-    google_map_link: "",
-    imageFile: null
+    location: "",
+    googleMapUrl: ""
   });
 
   const [error, setError] = useState("");
@@ -29,58 +27,55 @@ function HostEvent() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleImageChange = (e) => {
-    setFormData({ ...formData, imageFile: e.target.files[0] });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    // 🔥 HARD VALIDATION (prevents DB crash)
-    if (!formData.imageFile) {
-      setError("Event image is required");
+    if (!formData.eventDate || !formData.startTime || !formData.endTime) {
+      setError("Date, start time and end time are required");
+      return;
+    }
+
+    if (Number(formData.totalSeats) <= 0) {
+      setError("Total seats must be greater than 0");
       return;
     }
 
     try {
-      const form = new FormData();
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        googleMapUrl: formData.googleMapUrl,
+        eventDate: formData.eventDate,        // LocalDate
+        startTime: formData.startTime,        // LocalTime
+        endTime: formData.endTime,            // LocalTime
+        totalSeats: Number(formData.totalSeats),
+        availableSeats: Number(formData.totalSeats),
+        price: Number(formData.price),
+        bookingOpen: true
+      };
 
-      form.append("title", formData.title);
-      form.append("description", formData.description);
-      form.append("category", formData.category);
-      form.append("start_time", formData.start_time);
-      form.append("end_time", formData.end_time);
-      form.append("event_date", formData.event_date);
-      form.append("capacity", formData.capacity);
-      form.append("price", formData.price);
-      form.append("address", formData.address);
-      form.append("google_map_link", formData.google_map_link);
-
-      // ✅ MUST MATCH backend key
-      form.append("image", formData.imageFile);
-
-      const res = await fetchWithAuth(
-        "http://localhost:5000/api/events",
-        {
-          method: "POST",
-          body: form
-          // ❌ DO NOT add Content-Type
-        }
-      );
+      const res = await fetchWithAuth("http://localhost:8080/api/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
 
       if (!res.ok) {
-        setError(res.data?.error || "Failed to create event");
-        return;
+        const msg = await res.text();
+        throw new Error(msg || "Failed to create event");
       }
 
-      setSuccess("Event created successfully 🎉");
+      setSuccess("🎉 Event created successfully!");
       setTimeout(() => navigate("/dashboard"), 1500);
 
     } catch (err) {
       console.error(err);
-      setError("Server error. Please try again.");
+      setError(err.message || "Server error. Please try again.");
     }
   };
 
@@ -90,7 +85,7 @@ function HostEvent() {
       <Navbar />
 
       <div className="container my-5">
-        <h2 className="text-center mb-4 text-primary">YOU'RE A HOST NOW</h2>
+        <h2 className="text-center mb-4 text-primary">YOU'RE A HOST NOW 🎤</h2>
 
         <div className="card p-4 shadow">
           {error && <div className="alert alert-danger">{error}</div>}
@@ -98,18 +93,6 @@ function HostEvent() {
 
           <form onSubmit={handleSubmit}>
             <div className="row">
-
-              {/* Image */}
-              <div className="col-12 mb-3">
-                <label className="form-label">Event Image</label>
-                <input
-                  type="file"
-                  className="form-control"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  required
-                />
-              </div>
 
               {/* Title */}
               <div className="col-md-6 mb-3">
@@ -124,23 +107,32 @@ function HostEvent() {
                 />
               </div>
 
-              {/* Category */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Category</label>
-                <select
-                  className="form-select"
-                  name="category"
-                  value={formData.category}
+              {/* Total Seats */}
+              <div className="col-md-3 mb-3">
+                <label className="form-label">Total Seats</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  name="totalSeats"
+                  min="1"
+                  value={formData.totalSeats}
                   onChange={handleChange}
                   required
-                >
-                  <option value="">Select Category</option>
-                  <option value="Music">Music</option>
-                  <option value="Wedding">Wedding</option>
-                  <option value="Conference">Conference</option>
-                  <option value="Birthday">Birthday</option>
-                  <option value="Corporate">Corporate</option>
-                </select>
+                />
+              </div>
+
+              {/* Price */}
+              <div className="col-md-3 mb-3">
+                <label className="form-label">Price (₹)</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  name="price"
+                  min="0"
+                  value={formData.price}
+                  onChange={handleChange}
+                  required
+                />
               </div>
 
               {/* Description */}
@@ -155,93 +147,69 @@ function HostEvent() {
                 />
               </div>
 
-              {/* Times */}
-              <div className="col-md-6 mb-3">
+              {/* Date */}
+              <div className="col-md-4 mb-3">
+                <label className="form-label">Event Date</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  name="eventDate"
+                  value={formData.eventDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              {/* Start Time */}
+              <div className="col-md-4 mb-3">
                 <label className="form-label">Start Time</label>
                 <input
                   type="time"
                   className="form-control"
-                  name="start_time"
-                  value={formData.start_time}
+                  name="startTime"
+                  value={formData.startTime}
                   onChange={handleChange}
                   required
                 />
               </div>
 
-              <div className="col-md-6 mb-3">
+              {/* End Time */}
+              <div className="col-md-4 mb-3">
                 <label className="form-label">End Time</label>
                 <input
                   type="time"
                   className="form-control"
-                  name="end_time"
-                  value={formData.end_time}
+                  name="endTime"
+                  value={formData.endTime}
                   onChange={handleChange}
                   required
                 />
               </div>
 
-              {/* Date */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Date</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  name="event_date"
-                  value={formData.event_date}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              {/* Capacity */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Capacity</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  name="capacity"
-                  value={formData.capacity}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              {/* Price */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Price (₹)</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              {/* Address */}
+              {/* Location */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Location</label>
                 <input
                   type="text"
                   className="form-control"
-                  name="address"
-                  value={formData.address}
+                  name="location"
+                  value={formData.location}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Google Map */}
+              {/* Google Map URL */}
               <div className="col-md-6 mb-3">
-                <label className="form-label">Google Maps Link</label>
+                <label className="form-label">Google Map URL</label>
                 <input
                   type="url"
                   className="form-control"
-                  name="google_map_link"
-                  value={formData.google_map_link}
+                  name="googleMapUrl"
+                  value={formData.googleMapUrl}
                   onChange={handleChange}
                 />
               </div>
+
             </div>
 
             <button type="submit" className="btn btn-success w-100 mt-3">

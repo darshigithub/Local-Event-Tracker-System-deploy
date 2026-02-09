@@ -14,21 +14,22 @@ function BookingPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const API_URL = "http://localhost:5000/api";
+  const API_URL = "http://localhost:8080/api";
 
-  // ---------------- Fetch Event Details ----------------
+  // ---------------- Fetch Event ----------------
   const fetchEvent = async () => {
-    setLoading(true);
-    setError("");
     try {
-      const res = await fetchWithAuth(`${API_URL}/events/${eventId}`, { method: "GET" });
+      const res = await fetchWithAuth(`${API_URL}/events/${eventId}`, {
+        method: "GET",
+      });
+
       if (!res.ok) {
-        setError(res.data.message || "Failed to fetch event");
+        setError("Failed to load event");
       } else {
-        setEvent(res.data.event);
+        setEvent(res.data);
       }
-    } catch (err) {
-      setError("Server error. Please try again later.");
+    } catch {
+      setError("Server error");
     } finally {
       setLoading(false);
     }
@@ -36,14 +37,10 @@ function BookingPage() {
 
   useEffect(() => {
     fetchEvent();
-    const interval = setInterval(fetchEvent, 10000); // auto-refresh seats
-    return () => clearInterval(interval);
   }, [eventId]);
 
-  // ---------------- Handle Booking ----------------
+  // ---------------- Book Event ----------------
   const handleBooking = async () => {
-    if (!event) return;
-
     setError("");
 
     if (seats < 1) {
@@ -51,7 +48,7 @@ function BookingPage() {
       return;
     }
 
-    if (seats > event.available_seats) {
+    if (seats > event.availableSeats) {
       setError("Not enough seats available");
       return;
     }
@@ -60,101 +57,107 @@ function BookingPage() {
       const res = await fetchWithAuth(`${API_URL}/bookings`, {
         method: "POST",
         body: JSON.stringify({
-          event_id: event.event_id,
-          number_of_seats: seats,
+          eventId: event.id,
+          seats: seats,
         }),
       });
 
       if (!res.ok) {
-        setError(res.data.message || "Booking failed");
+        setError(res.data?.message || "Booking failed");
       } else {
-        // Booking successful → immediately redirect to payment page
-        const booking = res.data.booking; // backend should return booking object
-        navigate(`/payment`, {
+        navigate("/payment", {
           state: {
-            eventId: event.event_id,
+            bookingId: res.data.bookingId,
             eventTitle: event.title,
-            numberOfSeats: seats,
-            totalPrice: seats * parseFloat(event.price),
-            bookingId: booking?.booking_id, // optional if backend provides
+            eventDate: event.eventDate,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            seats,
+            pricePerSeat: event.price,
+            totalPrice: seats * event.price,
+            location: event.location,
+            hostName: event.hostName,
           },
         });
       }
-    } catch (err) {
-      setError("Server error. Please try again later.");
+    } catch {
+      setError("Server error while booking");
     }
   };
 
-  if (loading) return <p className="text-center my-5">Loading event...</p>;
-  if (!event) return <p className="text-center my-5">Event not found.</p>;
-
-  const price = parseFloat(event.price);
+  if (loading)
+    return (
+      <p className="text-center my-5 fs-5 text-secondary">Loading event details...</p>
+    );
+  if (!event)
+    return (
+      <p className="text-center my-5 fs-5 text-danger">Event not found</p>
+    );
 
   return (
     <>
       <Navbar />
 
       <div className="container my-5 d-flex justify-content-center">
-        {error && <div className="alert alert-danger w-100 text-center">{error}</div>}
+        <div className="card shadow-lg border-0 rounded-4 p-4" style={{ maxWidth: "500px", width: "100%" }}>
+          <h3 className="text-center text-primary fw-bold mb-4">{event.title}</h3>
 
-        <div
-          className="card shadow-sm rounded-3 p-3"
-          style={{ maxWidth: "400px", width: "100%" }}
-        >
-          <h4 className="mb-3 text-primary text-center">{event.title}</h4>
-
-          {event.image && (
-            <img
-              src={event.image}
-              alt={event.title}
-              className="img-fluid mb-3 rounded"
-              style={{ maxHeight: "250px", width: "100%", objectFit: "cover" }}
-            />
-          )}
-
-          <div className="mb-3">
-            <p className="mb-1">
-              <strong>Location:</strong>{" "}
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  event.address
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {event.address}
-              </a>
-            </p>
-            <p className="mb-1"><strong>Date:</strong> {event.event_date}</p>
-            <p className="mb-1"><strong>Time:</strong> {event.start_time} - {event.end_time}</p>
-            <p className="mb-1"><strong>Price per seat:</strong> ₹{price.toFixed(2)}</p>
-            <p className="mb-0"><strong>Available Seats:</strong> {event.available_seats}</p>
+          <div className="mb-3 d-flex justify-content-between">
+            <span className="fw-bold">Date:</span>
+            <span>{event.eventDate}</span>
           </div>
 
-          {/* Seat Counter */}
-          <div className="d-flex align-items-center justify-content-center my-3">
+          <div className="mb-3 d-flex justify-content-between">
+            <span className="fw-bold">Time:</span>
+            <span>{event.startTime} – {event.endTime}</span>
+          </div>
+
+          <div className="mb-3 d-flex justify-content-between">
+            <span className="fw-bold">Location:</span>
+            <span>{event.location}</span>
+          </div>
+
+          <div className="mb-3 d-flex justify-content-between">
+            <span className="fw-bold">Price per Seat:</span>
+            <span className="text-success fw-bold">₹{event.price}</span>
+          </div>
+
+          <div className="mb-3 d-flex justify-content-between">
+            <span className="fw-bold">Available Seats:</span>
+            <span className="badge bg-info text-dark px-3 py-1">{event.availableSeats}</span>
+          </div>
+
+          {/* Seat Selector */}
+          <div className="d-flex justify-content-center align-items-center my-4">
             <button
-              className="btn btn-outline-danger btn-sm"
+              className="btn btn-outline-danger btn-lg rounded-circle"
               onClick={() => seats > 1 && setSeats(seats - 1)}
             >
-              -
+              −
             </button>
-            <span className="mx-3 fs-5 fw-bold">{seats}</span>
+            <span className="mx-4 fs-4 fw-bold">{seats}</span>
             <button
-              className="btn btn-outline-success btn-sm"
-              onClick={() => seats < event.available_seats && setSeats(seats + 1)}
+              className="btn btn-outline-success btn-lg rounded-circle"
+              onClick={() =>
+                seats < event.availableSeats && setSeats(seats + 1)
+              }
             >
               +
             </button>
           </div>
 
           {/* Total Price */}
-          <div className="alert alert-light border border-primary rounded-3 d-flex justify-content-between align-items-center">
-            <span className="fw-bold">Total Price:</span>
-            <span className="text-primary fw-bold">₹{(seats * price).toFixed(2)}</span>
+          <div className="alert alert-light border rounded-3 d-flex justify-content-between fs-5">
+            <span className="fw-bold">Total:</span>
+            <span className="fw-bold text-success">₹{seats * event.price}</span>
           </div>
 
-          <button className="btn btn-success w-100" onClick={handleBooking}>
+          {error && <div className="alert alert-danger">{error}</div>}
+
+          <button
+            className="btn btn-primary w-100 fw-bold py-2 fs-5 mt-3 shadow-sm"
+            onClick={handleBooking}
+          >
             Confirm Booking & Pay
           </button>
         </div>
