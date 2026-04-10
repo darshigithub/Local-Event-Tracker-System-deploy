@@ -2,17 +2,17 @@ package com.eventify.service;
 
 import com.eventify.entity.User;
 import com.eventify.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 
 @Service
-@RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository; 
 
     @Override
     public UserDetails loadUserByUsername(String email)

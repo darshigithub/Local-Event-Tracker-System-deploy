@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { fetchWithAuth } from "../api";
+import api from "../api";
 
 function HostEvent() {
   const navigate = useNavigate();
@@ -19,87 +19,155 @@ function HostEvent() {
     googleMapUrl: ""
   });
 
+  const [users, setUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // ---------------- HANDLERS ----------------
+  const token = localStorage.getItem("access_token");
+
+  // 🔐 Redirect if not logged in
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    }
+  }, [token, navigate]);
+
+  // ---------------- FETCH USERS ----------------
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await api.get("/auth/users", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUsers(res.data);
+      } catch (err) {
+        if (err.response?.status === 401) {
+          navigate("/login");
+        } else {
+          setError("Failed to load users");
+        }
+      }
+    };
+
+    if (token) fetchUsers();
+  }, [navigate, token]);
+
+  // ---------------- INPUT CHANGE ----------------
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // ---------------- ADD USER ----------------
+  const addUser = (user) => {
+    if (!selectedUsers.find((u) => u.id === user.id)) {
+      setSelectedUsers([...selectedUsers, user]);
+    }
+  };
+
+  const removeUser = (id) => {
+    setSelectedUsers(selectedUsers.filter((u) => u.id !== id));
+  };
+
+  // ---------------- VALIDATION ----------------
+  const validateForm = () => {
+    if (!formData.title || !formData.eventDate) {
+      return "Title and Date are required";
+    }
+    if (formData.startTime >= formData.endTime) {
+      return "End time must be after start time";
+    }
+    if (Number(formData.totalSeats) <= 0) {
+      return "Seats must be greater than 0";
+    }
+    return null;
+  };
+
+  // ---------------- SUBMIT ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    if (!formData.eventDate || !formData.startTime || !formData.endTime) {
-      setError("Date, start time and end time are required");
-      return;
-    }
-
-    if (Number(formData.totalSeats) <= 0) {
-      setError("Total seats must be greater than 0");
-      return;
-    }
+    const errMsg = validateForm();
+    if (errMsg) return setError(errMsg);
 
     try {
+      setLoading(true);
+
       const payload = {
-        title: formData.title,
-        description: formData.description,
-        location: formData.location,
-        googleMapUrl: formData.googleMapUrl,
-        eventDate: formData.eventDate,        // LocalDate
-        startTime: formData.startTime,        // LocalTime
-        endTime: formData.endTime,            // LocalTime
+        ...formData,
         totalSeats: Number(formData.totalSeats),
         availableSeats: Number(formData.totalSeats),
         price: Number(formData.price),
-        bookingOpen: true
+        bookingOpen: true,
+        participants: selectedUsers.map((u) => ({
+          userId: u.id
+        }))
       };
 
-      const res = await fetchWithAuth("http://localhost:8080/api/events", {
-        method: "POST",
+      await api.post("/events", payload, {
         headers: {
-          "Content-Type": "application/json"
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
       });
 
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || "Failed to create event");
-      }
-
-      setSuccess("🎉 Event created successfully!");
+      setSuccess("✅ Event created successfully!");
       setTimeout(() => navigate("/dashboard"), 1500);
 
     } catch (err) {
-      console.error(err);
-      setError(err.message || "Server error. Please try again.");
+      if (err.response?.status === 401) {
+        navigate("/login");
+      } else {
+        setError(
+          err.response?.data?.message ||
+          err.response?.data ||
+          "❌ Failed to create event"
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ---------------- UI ----------------
+  // ---------------- FILTER USERS ----------------
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <>
       <Navbar />
 
-      <div className="container my-5">
-        <h2 className="text-center mb-4 text-primary">YOU'RE A HOST NOW 🎤</h2>
+      <div className="container py-5" style={{ maxWidth: "900px" }}>
 
-        <div className="card p-4 shadow">
+        {/* HEADER */}
+        <div className="text-center mb-5">
+          <h2 className="fw-bold text-primary">🎤 Host an Event</h2>
+          <p className="text-muted">Create and manage your event easily</p>
+        </div>
+
+        {/* FORM CARD */}
+        <div className="card border-0 shadow-lg rounded-4 p-4">
+
           {error && <div className="alert alert-danger">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
-            <div className="row">
+            <div className="row g-4">
 
-              {/* Title */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Title</label>
+              {/* TITLE */}
+              <div className="col-12">
                 <input
-                  type="text"
-                  className="form-control"
+                  className="form-control form-control-lg rounded-3"
+                  placeholder="Event Title"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
@@ -107,39 +175,11 @@ function HostEvent() {
                 />
               </div>
 
-              {/* Total Seats */}
-              <div className="col-md-3 mb-3">
-                <label className="form-label">Total Seats</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  name="totalSeats"
-                  min="1"
-                  value={formData.totalSeats}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              {/* Price */}
-              <div className="col-md-3 mb-3">
-                <label className="form-label">Price (₹)</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  name="price"
-                  min="0"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              {/* Description */}
-              <div className="col-12 mb-3">
-                <label className="form-label">Description</label>
+              {/* DESCRIPTION */}
+              <div className="col-12">
                 <textarea
-                  className="form-control"
+                  className="form-control rounded-3"
+                  placeholder="Event Description"
                   name="description"
                   rows="3"
                   value={formData.description}
@@ -147,12 +187,11 @@ function HostEvent() {
                 />
               </div>
 
-              {/* Date */}
-              <div className="col-md-4 mb-3">
-                <label className="form-label">Event Date</label>
+              {/* DATE & TIME */}
+              <div className="col-md-4">
                 <input
                   type="date"
-                  className="form-control"
+                  className="form-control rounded-3"
                   name="eventDate"
                   value={formData.eventDate}
                   onChange={handleChange}
@@ -160,12 +199,10 @@ function HostEvent() {
                 />
               </div>
 
-              {/* Start Time */}
-              <div className="col-md-4 mb-3">
-                <label className="form-label">Start Time</label>
+              <div className="col-md-4">
                 <input
                   type="time"
-                  className="form-control"
+                  className="form-control rounded-3"
                   name="startTime"
                   value={formData.startTime}
                   onChange={handleChange}
@@ -173,12 +210,10 @@ function HostEvent() {
                 />
               </div>
 
-              {/* End Time */}
-              <div className="col-md-4 mb-3">
-                <label className="form-label">End Time</label>
+              <div className="col-md-4">
                 <input
                   type="time"
-                  className="form-control"
+                  className="form-control rounded-3"
                   name="endTime"
                   value={formData.endTime}
                   onChange={handleChange}
@@ -186,35 +221,103 @@ function HostEvent() {
                 />
               </div>
 
-              {/* Location */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Location</label>
+              {/* SEATS & PRICE */}
+              <div className="col-md-6">
                 <input
-                  type="text"
-                  className="form-control"
+                  type="number"
+                  className="form-control rounded-3"
+                  placeholder="Total Seats"
+                  name="totalSeats"
+                  value={formData.totalSeats}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="col-md-6">
+                <input
+                  type="number"
+                  className="form-control rounded-3"
+                  placeholder="Price"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              {/* LOCATION */}
+              <div className="col-md-6">
+                <input
+                  className="form-control rounded-3"
+                  placeholder="Location"
                   name="location"
                   value={formData.location}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Google Map URL */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Google Map URL</label>
+              <div className="col-md-6">
                 <input
                   type="url"
-                  className="form-control"
+                  className="form-control rounded-3"
+                  placeholder="Google Map URL"
                   name="googleMapUrl"
                   value={formData.googleMapUrl}
                   onChange={handleChange}
                 />
               </div>
 
+              {/* PARTICIPANTS */}
+              <div className="col-12">
+                <h6 className="fw-bold">👥 Add Participants</h6>
+
+                <input
+                  className="form-control mb-2 rounded-3"
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+
+                <div className="border rounded-3 p-2" style={{ maxHeight: "150px", overflowY: "auto" }}>
+                  {filteredUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-2 bg-light rounded mb-1"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => addUser(user)}
+                    >
+                      {user.name} ({user.email})
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-2">
+                  {selectedUsers.map((user) => (
+                    <span key={user.id} className="badge bg-primary me-2">
+                      {user.name}
+                      <span
+                        className="ms-2"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => removeUser(user.id)}
+                      >
+                        ✖
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
             </div>
 
-            <button type="submit" className="btn btn-success w-100 mt-3">
-              Publish Event
+            <button
+              type="submit"
+              className="btn btn-primary w-100 mt-4 rounded-3 py-2"
+              disabled={loading}
+            >
+              {loading ? "Creating..." : "🚀 Create Event"}
             </button>
+
           </form>
         </div>
       </div>

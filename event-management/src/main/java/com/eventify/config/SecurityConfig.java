@@ -67,6 +67,9 @@ public class SecurityConfig {
                         // ADD REVIEW (JWT REQUIRED)
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
 
+                        // ANALYTICS (JWT REQUIRED)
+                        .requestMatchers("/api/analytics/**").authenticated()
+                        
                         // EVERYTHING ELSE
                         .anyRequest().authenticated())
 

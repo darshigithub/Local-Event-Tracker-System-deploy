@@ -2,16 +2,17 @@ package com.eventify.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @Table(
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "event_id"})
+        @UniqueConstraint(columnNames = {"event_id", "user_id"})
     }
 )
 public class Review {
@@ -20,15 +21,16 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private int rating; // 1–5
-
-    private String comment;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Event event;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", nullable = false)
-    private Event event;
+    private int rating; // 1–5
+
+    @Column(length = 500)
+    private String comment;
+
+    private LocalDateTime reviewedAt;
 }

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ReviewSection from "../components/ReviewSection";
+import api from "../api";
 
 function EventDetails() {
   const { eventId } = useParams();
@@ -11,37 +12,59 @@ function EventDetails() {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [registering, setRegistering] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
-  // ----------------------------------
-  // Fetch Event Details (Public)
-  // ----------------------------------
+  // ---------------- FETCH EVENT ----------------
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const res = await fetch(`http://localhost:8080/api/events/${eventId}`);
-        if (!res.ok) throw new Error("Event not found");
-
-        const data = await res.json();
-        setEvent(data);
+        const res = await api.get(`/events/${eventId}`);
+        setEvent(res.data);
       } catch (err) {
-        setError(err.message || "Failed to load event");
+        if (err.response?.status === 401) {
+          navigate("/login");
+        } else {
+          setError(err.response?.data?.message || "Event not found");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvent();
-  }, [eventId]);
+  }, [eventId, navigate]);
 
-  // ----------------------------------
-  // Loading / Error UI
-  // ----------------------------------
+  // ---------------- REGISTER ----------------
+  const handleRegister = async () => {
+    try {
+      setRegistering(true);
+
+      await api.post(`/events/${eventId}/register`);
+
+      setSuccessMsg("Successfully registered!");
+
+      setEvent((prev) => ({
+        ...prev,
+        registered: true,
+        availableSeats: prev.availableSeats - 1,
+      }));
+
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed");
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+  // ---------------- STATES ----------------
   if (loading)
     return (
       <>
         <Navbar />
-        <div className="container my-5 text-center">
-          <div className="alert alert-info">Loading event details...</div>
+        <div className="container text-center my-5">
+          <div className="spinner-border text-primary"></div>
+          <p className="mt-3 text-muted">Loading event details...</p>
         </div>
         <Footer />
       </>
@@ -52,26 +75,14 @@ function EventDetails() {
       <>
         <Navbar />
         <div className="container my-5 text-center">
-          <div className="alert alert-danger">{error}</div>
+          <div className="alert alert-danger shadow-sm">{error}</div>
         </div>
         <Footer />
       </>
     );
 
-  if (!event)
-    return (
-      <>
-        <Navbar />
-        <div className="container my-5 text-center">
-          <div className="alert alert-warning">Event not found</div>
-        </div>
-        <Footer />
-      </>
-    );
+  if (!event) return null;
 
-  // ----------------------------------
-  // Helpers
-  // ----------------------------------
   const formattedDate = event.eventDate
     ? new Date(event.eventDate).toLocaleDateString()
     : "N/A";
@@ -82,101 +93,146 @@ function EventDetails() {
       event.location || ""
     )}`;
 
-  // ----------------------------------
-  // MAIN UI
-  // ----------------------------------
   return (
     <>
       <Navbar />
 
-      <div className="container my-5">
-        {/* Event Card */}
-        <div
-          className="card shadow border-0 mx-auto"
-          style={{ maxWidth: "900px" }}
-        >
-          <div className="card-body p-4">
-            <h2 className="fw-bold text-primary mb-2">{event.title}</h2>
-            <p className="text-muted mb-3">{event.description}</p>
-            <hr />
+      <div className="container py-5" style={{ maxWidth: "1000px" }}>
 
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <strong>📅 Date</strong>
-                <p>{formattedDate}</p>
-              </div>
+        {/* HEADER */}
+        <div className="mb-4">
+          <h1 className="fw-bold">{event.title}</h1>
+          <p className="text-muted fs-5">{event.description}</p>
 
-              <div className="col-md-6 mb-3">
-                <strong>⏰ Time</strong>
-                <p>
-                  {event.startTime} – {event.endTime}
-                </p>
-              </div>
+          <span
+            className={`badge px-3 py-2 fs-6 ${
+              event.bookingOpen ? "bg-success" : "bg-danger"
+            }`}
+          >
+            {event.bookingOpen ? "Booking Open" : "Booking Closed"}
+          </span>
+        </div>
 
-              <div className="col-md-6 mb-3">
-                <strong>📍 Location</strong>
-                <p>
-                  <a href={mapUrl} target="_blank" rel="noopener noreferrer">
-                    {event.location}
-                  </a>
-                </p>
-              </div>
+        {/* SUCCESS */}
+        {successMsg && (
+          <div className="alert alert-success shadow-sm">{successMsg}</div>
+        )}
 
-              <div className="col-md-6 mb-3">
-                <strong>💰 Price</strong>
-                <p>{event.price > 0 ? `₹${event.price}` : "Free"}</p>
-              </div>
+        {/* MAIN CARD */}
+        <div className="card border-0 shadow-lg rounded-4 p-4 mb-4">
 
-              <div className="col-md-6 mb-3">
-                <strong>🎟 Total Seats</strong>
-                <p>{event.totalSeats}</p>
-              </div>
+          {/* INFO GRID */}
+          <div className="row g-4 text-center">
 
-              <div className="col-md-6 mb-3">
-                <strong>✅ Available Seats</strong>
-                <p>{event.availableSeats}</p>
-              </div>
-
-              <div className="col-md-12 mb-3">
-                <strong>👤 Hosted By</strong>
-                <p>{event.hostName || "Unknown"}</p>
-              </div>
-
-              <div className="col-md-12 mb-3">
-                <strong>📌 Status</strong>
-                <p>
-                  {event.bookingOpen ? (
-                    <span className="badge bg-success">Booking Open</span>
-                  ) : (
-                    <span className="badge bg-danger">Booking Closed</span>
-                  )}
-                </p>
+            <div className="col-md-3">
+              <div className="p-3 bg-light rounded-3">
+                <small className="text-muted">Date</small>
+                <div className="fw-bold">{formattedDate}</div>
               </div>
             </div>
 
-            {/* Book Button */}
-            {event.bookingOpen && event.availableSeats > 0 ? (
+            <div className="col-md-3">
+              <div className="p-3 bg-light rounded-3">
+                <small className="text-muted">Time</small>
+                <div className="fw-bold">
+                  {event.startTime} – {event.endTime}
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <div className="p-3 bg-light rounded-3">
+                <small className="text-muted">Location</small>
+                <div>
+                  <a href={mapUrl} target="_blank" rel="noreferrer">
+                    View Map
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <div className="p-3 bg-light rounded-3">
+                <small className="text-muted">Host</small>
+                <div className="fw-bold">{event.hostName}</div>
+              </div>
+            </div>
+
+          </div>
+
+          <hr />
+
+          {/* STATS */}
+          <div className="row text-center mb-3">
+            <div className="col-md-4">
+              <h4 className="text-primary">
+                ₹{event.price > 0 ? event.price : "Free"}
+              </h4>
+              <small className="text-muted">Price</small>
+            </div>
+
+            <div className="col-md-4">
+              <h4>{event.totalSeats}</h4>
+              <small className="text-muted">Total Seats</small>
+            </div>
+
+            <div className="col-md-4">
+              <h4 className="text-success">{event.availableSeats}</h4>
+              <small className="text-muted">Available</small>
+            </div>
+          </div>
+
+          {/* ACTION BUTTON */}
+          <div className="mt-4">
+
+            {/* HOST */}
+            {event.isHost && (
               <button
-                className="btn btn-primary w-100 fw-bold mt-3"
-                onClick={() => navigate(`/booking/${event.id}`)}
+                className="btn btn-outline-warning w-100 py-2 fw-bold"
+                onClick={() => navigate(`/event/${eventId}/manage`)}
               >
-                Book Now
+                Manage Event
               </button>
-            ) : (
-              <div className="alert alert-secondary text-center mt-3 mb-0">
-                Booking Closed
+            )}
+
+            {/* REGISTERED USER */}
+            {!event.isHost && event.registered && event.availableSeats > 0 && (
+              <button
+                className="btn btn-primary w-100 py-2 fw-bold"
+                onClick={() => navigate(`/booking/${eventId}`)}
+              >
+                Book Your Seat
+              </button>
+            )}
+
+            {/* NOT REGISTERED */}
+            {!event.isHost && !event.registered && event.availableSeats > 0 && (
+              <button
+                className="btn btn-success w-100 py-2 fw-bold"
+                onClick={handleRegister}
+                disabled={registering}
+              >
+                {registering ? "Processing..." : "Register Now"}
+              </button>
+            )}
+
+            {/* FULL */}
+            {event.availableSeats === 0 && (
+              <div className="alert alert-danger text-center mt-2">
+                Event Fully Booked
               </div>
             )}
+
           </div>
+
         </div>
 
-        {/* Review Section (JWT Protected Internally) */}
-        <div className="mx-auto mt-4" style={{ maxWidth: "900px" }}>
-          <ReviewSection
-            eventId={Number(eventId)}
-            hostName={event.hostName}
-          />
+        {/* REVIEWS */}
+        <div className="card border-0 shadow-sm rounded-4 p-4">
+          <h5 className="fw-bold mb-3">⭐ Reviews</h5>
+          <ReviewSection eventId={Number(eventId)} />
         </div>
+
       </div>
 
       <Footer />

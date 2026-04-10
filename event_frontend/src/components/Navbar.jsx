@@ -1,11 +1,12 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // 🔄 Sync login state with token
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem("access_token");
@@ -14,6 +15,7 @@ function Navbar() {
 
     checkAuth();
     window.addEventListener("storage", checkAuth);
+
     return () => window.removeEventListener("storage", checkAuth);
   }, []);
 
@@ -23,24 +25,41 @@ function Navbar() {
     navigate("/login");
   };
 
-  const linkStyle = { color: "#ff5722" };
+  // 🔥 Scroll navigation
+  const handleScrollNavigation = (sectionId) => {
+    if (location.pathname !== "/") {
+      navigate("/");
+      setTimeout(() => {
+        document
+          .getElementById(sectionId)
+          ?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    } else {
+      document
+        .getElementById(sectionId)
+        ?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4 py-2">
-      {/* Logo */}
+    <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4 py-2 sticky-top">
+
+      {/* 🔷 Logo */}
       <Link className="navbar-brand d-flex align-items-center fw-bold" to="/">
         <img
           src="https://i.postimg.cc/c6mRFy7y/Vibrant-sw-irling-gradient-logo.png"
           alt="logo"
           className="me-2"
-          style={{ width: "60px", height: "60px", objectFit: "cover" }}
+          style={{ width: "50px", height: "50px", objectFit: "cover" }}
         />
-        <span style={{ color: "#007bff", fontSize: "1.25rem" }}>
+        <span style={{ color: "#0d6efd", fontSize: "1.3rem" }}>
           EventSphere
         </span>
       </Link>
 
-      {/* Mobile toggle */}
+      {/* 🔷 Mobile Toggle */}
       <button
         className="navbar-toggler"
         type="button"
@@ -50,63 +69,91 @@ function Navbar() {
         <span className="navbar-toggler-icon"></span>
       </button>
 
-      {/* Links */}
+      {/* 🔷 Nav Links */}
       <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
-        <ul className="navbar-nav align-items-center">
+        <ul className="navbar-nav align-items-center gap-2">
+
+          {/* Home */}
           <li className="nav-item">
-            <Link className="nav-link fw-semibold" to="/" style={linkStyle}>
+            <Link
+              className={`nav-link nav-hover ${isActive("/") ? "active-link" : ""}`}
+              to="/"
+            >
               Home
             </Link>
           </li>
 
+          {/* Services */}
           <li className="nav-item">
-            <Link className="nav-link fw-semibold" to="/dashboard" style={linkStyle}>
-              Dashboard
-            </Link>
+            <span
+              className="nav-link nav-hover"
+              onClick={() => handleScrollNavigation("services")}
+            >
+              Services
+            </span>
           </li>
 
+          {/* Gallery */}
+          <li className="nav-item">
+            <span
+              className="nav-link nav-hover"
+              onClick={() => handleScrollNavigation("gallery")}
+            >
+              Gallery
+            </span>
+          </li>
+
+          {/* Analytics */}
           {isLoggedIn && (
             <li className="nav-item">
-              <Link className="nav-link fw-semibold" to="/host/event" style={linkStyle}>
-                Category
+              <Link
+                className={`btn btn-outline-primary rounded-pill px-3 ${
+                  isActive("/analytics") ? "active-btn" : ""
+                }`}
+                to="/analytics"
+              >
+                Analytics
               </Link>
             </li>
           )}
 
-          {/* -------- ACCOUNT DROPDOWN -------- */}
+          {/* Dashboard */}
+          {isLoggedIn && (
+            <li className="nav-item">
+              <Link
+                className={`btn btn-outline-primary rounded-pill px-3 ${
+                  isActive("/dashboard") ? "active-btn" : ""
+                }`}
+                to="/dashboard"
+              >
+                Dashboard
+              </Link>
+            </li>
+          )}
+
+          {/* 🔷 Account Dropdown */}
           <li className="nav-item dropdown ms-3">
             <button
-              className="nav-link dropdown-toggle btn btn-link"
+              className="btn btn-outline-warning rounded-pill dropdown-toggle"
               data-bs-toggle="dropdown"
-              style={{ color: "#ff5722", textDecoration: "none" }}
             >
-              Account
+              {isLoggedIn ? "My Account" : "Account"}
             </button>
 
-            <ul className="dropdown-menu dropdown-menu-end shadow-sm">
+            <ul className="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+
               {!isLoggedIn ? (
                 <>
                   <li>
-                    <Link className="dropdown-item" to="/login">
-                      Login
-                    </Link>
+                    <Link className="dropdown-item" to="/login">Login</Link>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/signup">
-                      Signup
-                    </Link>
+                    <Link className="dropdown-item" to="/signup">Signup</Link>
                   </li>
                 </>
               ) : (
                 <>
-                  <li>
-                    <Link className="dropdown-item" to="/profile">
-                      My Profile
-                    </Link>
-                  </li>
-                  <li>
-                    <hr className="dropdown-divider" />
-                  </li>
+                  {/* Logout only */}
                   <li>
                     <button
                       className="dropdown-item text-danger"
@@ -117,10 +164,43 @@ function Navbar() {
                   </li>
                 </>
               )}
+
             </ul>
           </li>
+
         </ul>
       </div>
+
+      {/* 🔥 Styles */}
+      <style>
+        {`
+          .nav-hover {
+            color: #333;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+          }
+
+          .nav-hover:hover {
+            color: #0d6efd;
+            transform: translateY(-1px);
+          }
+
+          .active-link {
+            color: #0d6efd !important;
+            font-weight: 600;
+          }
+
+          .active-btn {
+            background-color: #0d6efd;
+            color: white !important;
+          }
+
+          .navbar {
+            backdrop-filter: blur(8px);
+          }
+        `}
+      </style>
     </nav>
   );
 }

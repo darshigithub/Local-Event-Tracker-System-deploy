@@ -4,123 +4,114 @@ import com.eventify.dto.review.ReviewRequest;
 import com.eventify.dto.review.ReviewResponse;
 import com.eventify.entity.*;
 import com.eventify.repository.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class ReviewService {
 
-    private final ReviewRepository reviewRepository;
-    private final EventRepository eventRepository;
-    private final BookingRepository bookingRepository;
-    private final UserService userService;
+        @Autowired
+        private ReviewRepository reviewRepository;
 
-    
-    public void addReview(Long eventId, ReviewRequest request) {
-        User currentUser = userService.getCurrentUser();
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+        @Autowired
+        private EventRepository eventRepository;
 
-        if (event.getHost().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Host cannot review own event");
+        @Autowired
+        private EventParticipantRepository eventParticipantRepository;
+
+        @Autowired
+        private UserRepository userRepository;
+
+        @Transactional
+        public ReviewResponse addReview(
+                        ReviewRequest request,
+                        Authentication authentication) {
+
+                String email = authentication.getName();
+
+                System.out.println(email + " is trying to add a review for event " + request.getEventId());
+
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
+
+                Event event = eventRepository.findById(request.getEventId())
+                                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+                // Must be a participant
+                EventParticipant participant = eventParticipantRepository
+                                .findByEvent_IdAndUser_Id(event.getId(), user.getId())
+                                .orElseThrow(() -> new AccessDeniedException("You are not a participant"));
+
+                // Host cannot review
+                if (participant.getRole() == EventRole.HOST) {
+                        throw new AccessDeniedException("Host cannot review the event");
+                }
+
+                // Only one review per user per event
+                if (reviewRepository.existsByEvent_IdAndUser_Id(
+                                event.getId(), user.getId())) {
+                        throw new RuntimeException("You already reviewed this event");
+                }
+
+                // Review allowed within 4 days from event date
+
+                // In Java, ChronoUnit is an enum (enumeration) that defines a standard set of
+                // date and time units, such as DAYS, MONTHS, and HOURS.
+
+                long days = ChronoUnit.DAYS.between(
+                                event.getEventDate(), LocalDateTime.now());
+
+                if (days < 0 || days > 4) {
+                        throw new RuntimeException(
+                                        "Review allowed only within 4 days of event");
+                }
+
+                // Rating validation
+                if (request.getRating() < 1 || request.getRating() > 5) {
+                        throw new RuntimeException(
+                                        "Rating must be between 1 and 5");
+                }
+
+                Review review = Review.builder()
+                                .event(event)
+                                .user(user)
+                                .rating(request.getRating())
+                                .comment(request.getComment())
+                                .reviewedAt(LocalDateTime.now())
+                                .build();
+
+                reviewRepository.save(review);
+
+                return mapToResponse(review);
         }
 
-        bookingRepository.findByUserAndEvent(currentUser, event)
-                .orElseThrow(() -> new RuntimeException("You must book the event to review"));
+        public List<ReviewResponse> getReviewsForEvent(Long eventId) {
 
-        if (reviewRepository.findByUserAndEvent(currentUser, event).isPresent()) {
-            throw new RuntimeException("You already reviewed this event");
+                return reviewRepository.findByEvent_Id(eventId)
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList());
         }
 
-        Review review = Review.builder()
-                .rating(request.getRating())
-                .comment(request.getComment())
-                .user(currentUser)
-                .event(event)
-                .build();
+        private ReviewResponse mapToResponse(Review review) {
 
-        reviewRepository.save(review);
-    }
-
-    
-    public List<ReviewResponse> getReviewsForEvent(Long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
-
-        return reviewRepository.findByEvent(event)
-                .stream()
-                .map(review -> ReviewResponse.builder()
-                        .id(review.getId())
-                        .reviewerName(review.getUser().getName())
-                        .rating(review.getRating())
-                        .comment(review.getComment())
-                        .build())
-                .toList();
-    }
-
-    
-    public CanReviewResponse canReview(Long eventId, Long userId) {
-
-        Optional<Event> eventOpt = eventRepository.findById(eventId);
-        if (eventOpt.isEmpty()) {
-            return CanReviewResponse.builder()
-                    .canReview(false)
-                    .reason("Event not found")
-                    .build();
+                return ReviewResponse.builder()
+                                .reviewId(review.getId())
+                                .eventId(review.getEvent().getId())
+                                .eventTitle(review.getEvent().getTitle())
+                                .rating(review.getRating())
+                                .comment(review.getComment())
+                                .reviewerName(review.getUser().getName())
+                                .reviewedAt(review.getReviewedAt())
+                                .build();
         }
-
-        Event event = eventOpt.get();
-
-        User user = userService.getUserById(userId);
-
-        if (user == null) {
-            return CanReviewResponse.builder()
-                    .canReview(false)
-                    .reason("User not found")
-                    .build();
-        }
-
-        if (event.getHost().getId().equals(userId)) {
-            return CanReviewResponse.builder()
-                    .canReview(false)
-                    .reason("Host cannot review their own event")
-                    .build();
-        }
-
-        boolean hasBooked = bookingRepository.findByUserAndEvent(user, event).isPresent();
-        if (!hasBooked) {
-            return CanReviewResponse.builder()
-                    .canReview(false)
-                    .reason("You must book the event to review")
-                    .build();
-        }
-
-        boolean alreadyReviewed = reviewRepository.findByUserAndEvent(user, event).isPresent();
-        if (alreadyReviewed) {
-            return CanReviewResponse.builder()
-                    .canReview(false)
-                    .reason("You already reviewed this event")
-                    .build();
-        }
-
-        return CanReviewResponse.builder()
-                .canReview(true)
-                .reason("")
-                .build();
-    }
-
-    @Getter
-    @Builder
-    @AllArgsConstructor
-    public static class CanReviewResponse {
-        private boolean canReview;
-        private String reason;
-    }
 }

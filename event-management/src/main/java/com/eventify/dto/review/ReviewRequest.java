@@ -1,13 +1,10 @@
 package com.eventify.dto.review;
 
-import lombok.*;
+import lombok.Data;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Data
 public class ReviewRequest {
-    private int rating;      
-    private String comment;  
+    private Long eventId;
+    private int rating;   // 1 to 5
+    private String comment;
 }

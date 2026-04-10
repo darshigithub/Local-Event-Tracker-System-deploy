@@ -1,14 +1,18 @@
 package com.eventify.repository;
 
-import com.eventify.entity.Event;
 import com.eventify.entity.Review;
-import com.eventify.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
-    List<Review> findByEvent(Event event);
-    Optional<Review> findByUserAndEvent(User user, Event event);
+
+    boolean existsByEvent_IdAndUser_Id(Long eventId, Long userId);
+
+    List<Review> findByEvent_Id(Long eventId);
+
+    Optional<Review> findByEvent_IdAndUser_Id(Long eventId, Long userId);
 }

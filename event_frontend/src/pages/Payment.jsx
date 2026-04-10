@@ -1,4 +1,3 @@
-// src/pages/Payment.jsx
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -10,6 +9,7 @@ function Payment() {
 
   const booking = location.state;
   const [isPaying, setIsPaying] = useState(false);
+  const [method, setMethod] = useState("");
 
   useEffect(() => {
     if (!booking) {
@@ -20,9 +20,15 @@ function Payment() {
   if (!booking) return null;
 
   const handlePayment = () => {
+    if (!method) {
+      alert("Please select a payment method");
+      return;
+    }
+
     setIsPaying(true);
+
     setTimeout(() => {
-      alert("Payment successful!");
+      alert("✅ Payment successful!");
       navigate("/dashboard", { replace: true });
     }, 2000);
   };
@@ -32,53 +38,133 @@ function Payment() {
       <Navbar />
 
       <div className="container my-5">
-        <h2 className="text-center mb-4 text-primary fw-bold">Payment Summary</h2>
+        <h2 className="text-center fw-bold mb-5 text-dark">
+          💳 Secure Payment
+        </h2>
 
-        {/* Booking Summary Card */}
-        <div className="card shadow-lg border-0 mx-auto p-4" style={{ maxWidth: "600px" }}>
-          <h5 className="mb-4 text-secondary">Booking Details</h5>
+        <div className="row g-4 justify-content-center">
 
-          <div className="mb-3 d-flex justify-content-between align-items-center">
-            <span className="fw-bold">Event:</span>
-            <span className="badge bg-primary text-white px-3 py-2">{booking.eventTitle}</span>
+          {/* ================= LEFT: BOOKING SUMMARY ================= */}
+          <div className="col-md-5">
+            <div className="card border-0 shadow-lg rounded-4 p-4 h-100">
+
+              <h5 className="fw-bold mb-4 text-primary">
+                📄 Booking Summary
+              </h5>
+
+              {/* Event Title */}
+              <div className="mb-3">
+                <small className="text-muted">Event</small>
+                <div className="fw-semibold fs-5">
+                  {booking.eventTitle}
+                </div>
+              </div>
+
+              {/* Seats */}
+              <div className="mb-3">
+                <small className="text-muted">Seats Booked</small>
+                <div className="fw-semibold">
+                  {booking.seats}
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Price Breakdown */}
+              <div className="mb-2 d-flex justify-content-between">
+                <span>Seat Price</span>
+                <span>₹{(booking.totalPrice / booking.seats).toFixed(2)}</span>
+              </div>
+
+              <div className="mb-2 d-flex justify-content-between">
+                <span>Total Seats</span>
+                <span>{booking.seats}</span>
+              </div>
+
+              <hr />
+
+              {/* TOTAL */}
+              <div className="d-flex justify-content-between align-items-center mt-3">
+                <h5>Total Amount</h5>
+                <h4 className="text-success fw-bold">
+                  ₹{booking.totalPrice.toFixed(2)}
+                </h4>
+              </div>
+
+            </div>
           </div>
 
-          <div className="mb-3 d-flex justify-content-between align-items-center">
-            <span className="fw-bold">Number of Seats:</span>
-            <span className="badge bg-info text-dark px-3 py-2">{booking.numberOfSeats}</span>
+          {/* ================= RIGHT: PAYMENT METHODS ================= */}
+          <div className="col-md-5">
+            <div className="card border-0 shadow-lg rounded-4 p-4">
+
+              <h5 className="fw-bold mb-4 text-primary">
+                💰 Select Payment Method
+              </h5>
+
+              {/* Payment Options */}
+              <div className="d-grid gap-3">
+
+                <button
+                  className={`btn ${method === "card" ? "btn-primary" : "btn-outline-secondary"} text-start py-3`}
+                  onClick={() => setMethod("card")}
+                >
+                  💳 Credit / Debit Card
+                </button>
+
+                <button
+                  className={`btn ${method === "upi" ? "btn-primary" : "btn-outline-secondary"} text-start py-3`}
+                  onClick={() => setMethod("upi")}
+                >
+                  📱 UPI (Google Pay / PhonePe)
+                </button>
+
+                <button
+                  className={`btn ${method === "netbanking" ? "btn-primary" : "btn-outline-secondary"} text-start py-3`}
+                  onClick={() => setMethod("netbanking")}
+                >
+                  🏦 Net Banking
+                </button>
+
+                <button
+                  className={`btn ${method === "wallet" ? "btn-primary" : "btn-outline-secondary"} text-start py-3`}
+                  onClick={() => setMethod("wallet")}
+                >
+                  👛 Wallet
+                </button>
+
+              </div>
+
+              {/* Pay Button */}
+              <button
+                className="btn btn-success w-100 fw-bold mt-4 py-3 rounded-3"
+                onClick={handlePayment}
+                disabled={isPaying}
+              >
+                {isPaying
+                  ? "Processing Payment..."
+                  : `Pay ₹${booking.totalPrice.toFixed(2)}`}
+              </button>
+
+              {/* Secure Note */}
+              <p className="text-muted text-center mt-3 mb-0">
+                <small>🔒 100% Secure Payments</small>
+              </p>
+
+            </div>
           </div>
 
-          <div className="mb-3 d-flex justify-content-between align-items-center">
-            <span className="fw-bold">Total Amount:</span>
-            <span className="badge bg-success text-white px-3 py-2">₹{booking.totalPrice.toFixed(2)}</span>
-          </div>
-
-          <hr />
-
-          {/* Payment Method */}
-          <h5 className="mb-3 text-secondary">Payment Method</h5>
-          <div className="mb-3">
-            <select className="form-select form-select-lg">
-              <option value="">Select Payment Method</option>
-              <option value="card">Credit/Debit Card</option>
-              <option value="upi">UPI</option>
-              <option value="netbanking">Net Banking</option>
-              <option value="wallet">Wallet</option>
-            </select>
-          </div>
-
-          <button
-            className={`btn btn-primary w-100 fw-bold mt-3 py-2 ${isPaying ? "disabled" : ""}`}
-            onClick={handlePayment}
-          >
-            {isPaying ? "Processing Payment..." : "Pay Now"}
-          </button>
         </div>
 
-        {/* Optional: Payment Note */}
-        <div className="text-center text-muted mt-3" style={{ maxWidth: "600px", margin: "auto" }}>
-          <small>By clicking "Pay Now", you agree to our <u>Terms & Conditions</u> and <u>Privacy Policy</u>.</small>
+        {/* TERMS */}
+        <div className="text-center text-muted mt-4">
+          <small>
+            By continuing, you agree to our{" "}
+            <u>Terms & Conditions</u> and{" "}
+            <u>Privacy Policy</u>.
+          </small>
         </div>
+
       </div>
 
       <Footer />

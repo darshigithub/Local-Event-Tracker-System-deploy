@@ -1,11 +1,18 @@
 package com.eventify.dto.event;
 
+import lombok.*;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
-import lombok.Data;
+import java.util.List;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class EventResponse {
+
     private Long id;
     private String title;
     private String description;
@@ -18,6 +25,18 @@ public class EventResponse {
     private int availableSeats;
     private double price;
     private boolean bookingOpen;
+
+    // Host details
     private String hostName;
-    private String loggedInUserEmail; // add this
+
+    // Logged-in user info
+    private String loggedInUserEmail;
+
+    // Users allowed for this event
+    private List<EventUserResponse> participants; 
+
+    private boolean isHost;
+    
+    private boolean registered;
+    
 }

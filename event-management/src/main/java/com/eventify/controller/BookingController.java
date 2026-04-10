@@ -2,29 +2,30 @@ package com.eventify.controller;
 
 import com.eventify.dto.Booking.BookingRequest;
 import com.eventify.dto.Booking.BookingResponse;
-import com.eventify.entity.Booking;
 import com.eventify.service.BookingService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
-@RequiredArgsConstructor
 public class BookingController {
 
-    private final BookingService bookingService;
+    @Autowired
+    private BookingService bookingService;
 
-    
     @PostMapping
-    public BookingResponse bookEvent(@RequestBody BookingRequest request) {
-        return bookingService.bookEvent(request);
+    public BookingResponse bookEvent(
+            @RequestBody BookingRequest request,
+            Authentication authentication) {
+
+        return bookingService.bookEvent(request, authentication);
     }
 
-    
     @GetMapping("/my")
-    public List<Booking> myBookings() {
-        return bookingService.getMyBookings();
+    public List<BookingResponse> myBookings(Authentication authentication) {
+        return bookingService.getMyBookings(authentication);
     }
 }

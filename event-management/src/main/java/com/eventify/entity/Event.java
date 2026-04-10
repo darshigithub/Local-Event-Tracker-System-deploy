@@ -2,9 +2,10 @@ package com.eventify.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -26,6 +27,7 @@ public class Event {
 
     private String location;
 
+    @Column(length = 1000)
     private String googleMapUrl;
 
     private LocalDate eventDate;
@@ -45,4 +47,9 @@ public class Event {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "host_id", nullable = false)
     private User host;
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    // Set is used to prevent duplicate participants for the same event
+    private Set<EventParticipant> participants = new HashSet<>();
 }

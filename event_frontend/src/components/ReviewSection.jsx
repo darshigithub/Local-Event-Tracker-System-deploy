@@ -1,24 +1,21 @@
 import { useState, useEffect } from "react";
-import { fetchWithAuth } from "../api";
+import api from "../api"; 
 
-// --------------------------
-// Star Rating Component
-// --------------------------
-function StarRating({ rating, onRatingChange, readonly = false, size = "1.5rem" }) {
-  const [hoverRating, setHoverRating] = useState(0);
+function StarRating({ rating, onRatingChange, readonly = false }) {
+  const [hover, setHover] = useState(0);
 
   return (
-    <div className="d-flex align-items-center">
+    <div>
       {[1, 2, 3, 4, 5].map((star) => (
         <span
           key={star}
-          onClick={() => !readonly && onRatingChange?.(star)}
-          onMouseEnter={() => !readonly && setHoverRating(star)}
-          onMouseLeave={() => !readonly && setHoverRating(0)}
+          onClick={() => !readonly && onRatingChange(star)}
+          onMouseEnter={() => !readonly && setHover(star)}
+          onMouseLeave={() => !readonly && setHover(0)}
           style={{
             cursor: readonly ? "default" : "pointer",
-            fontSize: size,
-            color: star <= (hoverRating || rating) ? "#ffc107" : "#e4e5e9",
+            fontSize: "1.8rem",
+            color: star <= (hover || rating) ? "#ffc107" : "#e4e5e9",
           }}
         >
           ★
@@ -28,67 +25,73 @@ function StarRating({ rating, onRatingChange, readonly = false, size = "1.5rem" 
   );
 }
 
-// --------------------------
-// Review Form
-// --------------------------
-function ReviewForm({ eventId, onReviewSubmitted }) {
+
+function ReviewForm({ eventId, onSuccess }) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const submitReview = async (e) => {
     e.preventDefault();
-    setMsg("");
 
     if (rating === 0) {
-      setMsg("Please select a rating.");
+      setMsg("Please select rating");
       return;
     }
 
     setLoading(true);
+    setMsg("");
+
     try {
-      const res = await fetchWithAuth(
-        `http://localhost:8080/api/reviews/${eventId}`,
+      await api.post(
+        "/reviews",
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rating, comment }),
+          eventId,
+          rating,
+          comment,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
         }
       );
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to submit review");
-      }
-
+      setMsg("Review added successfully");
       setRating(0);
       setComment("");
-      setMsg("Review submitted successfully!");
-      onReviewSubmitted();
+      onSuccess();
     } catch (err) {
-      setMsg(err.message);
+      setMsg(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to submit review"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="card mt-4">
+    <div className="card mt-3">
       <div className="card-body">
-        <h5>Write a Review</h5>
+        <h5>Add Review</h5>
+
         {msg && <div className="alert alert-info">{msg}</div>}
+
         <form onSubmit={submitReview}>
-          <StarRating rating={rating} onRatingChange={setRating} size="2rem" />
+          <StarRating rating={rating} onRatingChange={setRating} />
+
           <textarea
             className="form-control mt-3"
-            rows="3"
-            placeholder="Your experience (optional)"
+            placeholder="Write your experience..."
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
+
           <button className="btn btn-primary mt-3" disabled={loading}>
-            {loading ? "Submitting..." : "Submit Review"}
+            {loading ? "Submitting..." : "Submit"}
           </button>
         </form>
       </div>
@@ -96,106 +99,88 @@ function ReviewForm({ eventId, onReviewSubmitted }) {
   );
 }
 
-// --------------------------
-// Review Card
-// --------------------------
 function ReviewCard({ review }) {
   return (
     <div className="card mb-2">
       <div className="card-body">
-        <strong>{review.reviewerName || "Anonymous"}</strong>
-        <StarRating rating={review.rating} readonly size="1.2rem" />
-        {review.comment && <p className="mt-2">{review.comment}</p>}
+        <h6>{review.reviewerName}</h6>
+
+        <StarRating rating={review.rating} readonly />
+
+        {review.comment && (
+          <p className="mt-2 text-muted">{review.comment}</p>
+        )}
+
+        <small className="text-secondary">
+          {new Date(review.reviewedAt).toLocaleString()}
+        </small>
       </div>
     </div>
   );
 }
 
-// --------------------------
-// MAIN REVIEW SECTION
-// --------------------------
-export default function ReviewSection({ eventId, hostName }) {
+export default function ReviewSection({ eventId }) {
   const [reviews, setReviews] = useState([]);
-  const [canReview, setCanReview] = useState(false);
-  const [reason, setReason] = useState("");
+  const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // --------------------------
-  // Load Reviews (PUBLIC)
-  // --------------------------
+  const isLoggedIn = !!localStorage.getItem("access_token");
+
   const loadReviews = async () => {
-    const res = await fetch(`http://localhost:8080/api/reviews/${eventId}`);
-    if (res.ok) {
-      const data = await res.json();
-      setReviews(data);
-    }
-  };
-
-  // --------------------------
-  // Check Review Eligibility
-  // --------------------------
-  const checkCanReview = async () => {
-    setCanReview(false);
-
-    const userId = localStorage.getItem("user_id");
-    const email = localStorage.getItem("email");
-
-    console.log("Auth info:", email, userId);
-
-    if (!email || !userId) {
-      setReason("Please login to write a review.");
-      return;
-    }
-
-    if (email === hostName) {
-      setReason("Host cannot review their own event.");
-      return;
-    }
-
     try {
-      const res = await fetchWithAuth(
-        `http://localhost:8080/api/reviews/can-review/${eventId}/${userId}`
-      );
-
-      if (!res.ok) {
-        setReason("You are not eligible to review this event.");
-        return;
-      }
-
-      const data = await res.json();
-      setCanReview(data.canReview);
-      setReason(data.reason);
+      const res = await api.get(`/reviews/event/${eventId}`);
+      setReviews(res.data);
     } catch {
-      setReason("Error checking review eligibility.");
+      setReviews([]);
     }
   };
 
-  // 🔥 IMPORTANT FIX
   useEffect(() => {
     const init = async () => {
       setLoading(true);
       await loadReviews();
-      await checkCanReview();
       setLoading(false);
     };
     init();
-  }, [eventId, localStorage.getItem("user_id")]);
+  }, [eventId]);
 
   if (loading) return <p>Loading reviews...</p>;
 
   return (
     <div className="mt-4">
-      <h4>Reviews</h4>
+      {/* <h4>⭐ Reviews</h4> */}
 
-      {reviews.length === 0 && <p className="text-muted">No reviews yet.</p>}
-      {reviews.map((r) => (
-        <ReviewCard key={r.id} review={r} />
-      ))}
+      {!isLoggedIn && (
+        <div className="alert alert-warning">
+          Please login to add a review
+        </div>
+      )}
 
-      {canReview ? (
-        <ReviewForm eventId={eventId} onReviewSubmitted={loadReviews} />
+      {isLoggedIn && (
+        <button
+          className="btn btn-success mb-3"
+          onClick={() => setShowForm(!showForm)}
+        >
+          {showForm ? "Close" : "Add Review"}
+        </button>
+      )}
+
+      {showForm && isLoggedIn && (
+        <ReviewForm
+          eventId={eventId}
+          onSuccess={() => {
+            loadReviews();
+            setShowForm(false);
+          }}
+        />
+      )}
+
+      {reviews.length === 0 ? (
+        <p className="text-muted">No reviews yet.</p>
       ) : (
-        reason && <div className="alert alert-info mt-3">{reason}</div>
+        reviews.map((r) => (
+          <ReviewCard key={r.reviewId} review={r} />
+        ))
       )}
     </div>
   );

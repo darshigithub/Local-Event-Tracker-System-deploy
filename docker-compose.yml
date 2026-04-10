@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: postgres_db_v2
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports: 
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/init.sh:/docker-entrypoint-initdb.d/init.sh
+    networks:
+      - event-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  inventory-service:
+    image: darshanar28/inventory-service-v2:latest
+    container_name: inventory_service_v2
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - event-network
+
+  event-service:
+    image: darshanar28/event-service-v2:latest
+    container_name: event_service_v2
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/event_management_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - event-network
+
+  chatbot-service:
+    image: darshanar28/chatbot-service-v2:latest
+    container_name: chatbot_service_v2
+    restart: always
+    ports:
+      - "5002:5002"
+    environment:
+      EVENT_SERVICE_URL: http://event-service:5000
+    depends_on:
+      event-service:
+        condition: service_started
+    networks:
+      - event-network
+
+  frontend:
+    image: darshanar28/frontend-v2:latest
+    container_name: frontend_app_v2
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - event-service
+      - inventory-service
+    networks:
+      - event-network
+
+networks:
+  event-network:
+    driver: bridge
+
+volumes:
+  postgres-data:

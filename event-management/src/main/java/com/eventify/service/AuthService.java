@@ -5,18 +5,26 @@ import com.eventify.dto.auth.LoginRequest;
 import com.eventify.dto.auth.RegisterRequest;
 import com.eventify.entity.User;
 import com.eventify.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    @Autowired
+    private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    // REGISTER USER
     public void register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -32,7 +40,7 @@ public class AuthService {
         userRepository.save(user);
     }
 
-
+    // LOGIN AUTHENTICATION
     public User authenticate(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
@@ -44,8 +52,13 @@ public class AuthService {
 
         return user;
     }
-    
+
+    // JWT TOKEN GENERATION
     public String generateToken(User user) {
         return jwtUtil.generateToken(user.getEmail());
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 }

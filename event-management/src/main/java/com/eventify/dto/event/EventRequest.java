@@ -1,9 +1,8 @@
 package com.eventify.dto.event;
-
 import lombok.*;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -29,4 +28,7 @@ public class EventRequest {
     private int totalSeats;
 
     private double price;
+
+    // Selected users who can access this event
+    private List<EventParticipantRequest> participants;
 }
