@@ -23,33 +23,33 @@ pipeline {
         stage('Build Backend Services') {
             steps {
                 echo "Building Spring Boot services..."
-                sh '''
+                bat '''
                 cd event-management
-                mvn clean package -DskipTests
+                call mvn clean package -DskipTests
 
                 cd ../inventory-service
-                mvn clean package -DskipTests
+                call mvn clean package -DskipTests
 
                 cd ../chatbot_service
-                mvn clean package -DskipTests
+                call mvn clean package -DskipTests
                 '''
             }
         }
 
-        // 3. BUILD DOCKER IMAGES (UPDATED NAMES)
+        // 3. BUILD DOCKER IMAGES
         stage('Build Docker Images') {
             steps {
                 echo "Building Docker images..."
-                sh '''
-                docker build -t $DOCKER_HUB/event-service-v2:latest ./event-management
-                docker build -t $DOCKER_HUB/inventory-service-v2:latest ./inventory-service
-                docker build -t $DOCKER_HUB/chatbot-service-v2:latest ./chatbot_service
-                docker build -t $DOCKER_HUB/frontend-v2:latest ./event_frontend
+                bat '''
+                docker build -t %DOCKER_HUB%/event-service-v2:latest ./event-management
+                docker build -t %DOCKER_HUB%/inventory-service-v2:latest ./inventory-service
+                docker build -t %DOCKER_HUB%/chatbot-service-v2:latest ./chatbot_service
+                docker build -t %DOCKER_HUB%/frontend-v2:latest ./event_frontend
                 '''
             }
         }
 
-        // 4. PUSH TO DOCKER HUB (UPDATED)
+        // 4. PUSH TO DOCKER HUB
         stage('Push Docker Images') {
             steps {
                 echo "Pushing images..."
@@ -58,23 +58,23 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    bat '''
+                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
 
-                    docker push $DOCKER_HUB/event-service-v2:latest
-                    docker push $DOCKER_HUB/inventory-service-v2:latest
-                    docker push $DOCKER_HUB/chatbot-service-v2:latest
-                    docker push $DOCKER_HUB/frontend-v2:latest
+                    docker push %DOCKER_HUB%/event-service-v2:latest
+                    docker push %DOCKER_HUB%/inventory-service-v2:latest
+                    docker push %DOCKER_HUB%/chatbot-service-v2:latest
+                    docker push %DOCKER_HUB%/frontend-v2:latest
                     '''
                 }
             }
         }
 
-        // 5. DEPLOY
+        // 5. DEPLOY APPLICATION
         stage('Deploy Application') {
             steps {
                 echo "Deploying with docker-compose..."
-                sh '''
+                bat '''
                 docker-compose down
                 docker-compose pull
                 docker-compose up -d
