@@ -54,9 +54,9 @@ pipeline {
             steps {
                 echo "Pushing images..."
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
+                    credentialsId: 'dockerhub-cred',
                     usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                    passwordVariable: 'DOCKER_PASS' 
                 )]) {
                     bat '''
                     echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
@@ -64,7 +64,7 @@ pipeline {
                     docker push %DOCKER_HUB%/event-service-v2:latest
                     docker push %DOCKER_HUB%/inventory-service-v2:latest
                     docker push %DOCKER_HUB%/chatbot-service-v2:latest
-                    docker push %DOCKER_HUB%/frontend-v2:latest
+                    docker push %DOCKER_HUB%/frontend-v2:latest 
                     '''
                 }
             }
