@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/chat")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000") // Allow requests from React frontend
 public class ChatController {
 
     private final ChatbotService chatbotService;
@@ -23,7 +23,7 @@ public class ChatController {
             @RequestHeader(value = "Authorization", required = false) String authHeader
     ) {
         try {
-            // ✅ Extract clean token
+            
             String token = extractToken(authHeader);
 
             // Debug (you can remove later)
@@ -45,7 +45,7 @@ public class ChatController {
         }
     }
 
-    // ✅ IMPORTANT: Fix for "review not triggering"
+    
     private String extractToken(String authHeader) {
 
         if (authHeader == null || authHeader.isBlank()) {

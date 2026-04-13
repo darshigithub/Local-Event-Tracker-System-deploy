@@ -20,7 +20,7 @@ public class InventoryClient {
 
     private final RestTemplate restTemplate;
 
-    private final String INVENTORY_BASE_URL = "http://localhost:8082/api/inventory";
+    private final String INVENTORY_BASE_URL = "http://localhost:5001/api/inventory";
 
     public InventoryClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;

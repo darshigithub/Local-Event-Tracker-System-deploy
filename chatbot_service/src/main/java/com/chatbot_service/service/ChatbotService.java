@@ -20,10 +20,10 @@ public class ChatbotService {
         this.objectMapper = objectMapper;
     }
 
-    private final String EVENT_API = "http://localhost:8080/api/events";
-    private final String AUTH_API = "http://localhost:8080/api/auth";
-    private final String BOOKING_API = "http://localhost:8080/api/bookings";
-    private final String REVIEW_API = "http://localhost:8080/api/reviews";
+    private final String EVENT_API = "http://localhost:5000/api/events";
+    private final String AUTH_API = "http://localhost:5000/api/auth";
+    private final String BOOKING_API = "http://localhost:5000/api/bookings";
+    private final String REVIEW_API = "http://localhost:5000/api/reviews";
 
     public String processMessage(String message, String token) {
 
