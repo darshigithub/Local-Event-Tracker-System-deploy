@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const API_URL = "http://localhost:8085/chat";
+const API_URL = "http://localhost:5002/chat";
 
 function ChatBot() {
     const [messages, setMessages] = useState([

@@ -9,7 +9,7 @@ function AnalyticsDashboard() {
     const [data, setData] = useState(null);
 
     useEffect(() => {
-        fetch("http://localhost:8080/api/analytics", {
+        fetch("http://localhost:5000/api/analytics", {
             headers: {
                 Authorization: "Bearer " + localStorage.getItem("access_token")
             }
