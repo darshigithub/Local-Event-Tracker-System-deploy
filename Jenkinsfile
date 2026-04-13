@@ -12,8 +12,9 @@ pipeline {
 
     stages {
 
-        //   1. CLONE CODE
-        
+        /* =========================
+           1. CLONE CODE
+        ========================== */
         stage('Clone Code') {
             steps {
                 echo "Cloning repository..."
@@ -21,8 +22,9 @@ pipeline {
             }
         }
 
-        //   2. BUILD + TEST (PARALLEL)
-
+        /* =========================
+           2. BUILD + TEST
+        ========================== */
         stage('Build & Test Services') {
             parallel {
 
@@ -30,7 +32,7 @@ pipeline {
                     steps {
                         bat '''
                         cd event-management
-                        call mvn clean test package -DskipTests
+                        mvn clean test package -DskipTests
                         '''
                     }
                 }
@@ -39,7 +41,7 @@ pipeline {
                     steps {
                         bat '''
                         cd inventory-service
-                        call mvn clean test package -DskipTests
+                        mvn clean test package -DskipTests
                         '''
                     }
                 }
@@ -48,35 +50,37 @@ pipeline {
                     steps {
                         bat '''
                         cd chatbot_service
-                        call mvn clean test package -DskipTests
+                        mvn clean test package -DskipTests
                         '''
                     }
                 }
             }
         }
 
-        //   3. BUILD DOCKER IMAGES
-
+        /* =========================
+           3. BUILD DOCKER IMAGES
+        ========================== */
         stage('Build Docker Images') {
+
             steps {
                 script {
 
-                    def eventImage = docker.build(
+                    eventImage = docker.build(
                         "${DOCKER_HUB}/event-service:${IMAGE_TAG}",
                         "./event-management"
                     )
 
-                    def inventoryImage = docker.build(
+                    inventoryImage = docker.build(
                         "${DOCKER_HUB}/inventory-service:${IMAGE_TAG}",
                         "./inventory-service"
                     )
 
-                    def chatbotImage = docker.build(
+                    chatbotImage = docker.build(
                         "${DOCKER_HUB}/chatbot-service:${IMAGE_TAG}",
                         "./chatbot_service"
                     )
 
-                    def frontendImage = docker.build(
+                    frontendImage = docker.build(
                         "${DOCKER_HUB}/frontend:${IMAGE_TAG}",
                         "./event_frontend"
                     )
@@ -84,32 +88,41 @@ pipeline {
             }
         }
 
-        //   4. PUSH TO DOCKER HUB
-
+        /* =========================
+           4. PUSH TO DOCKER HUB
+        ========================== */
         stage('Push Docker Images') {
             steps {
                 script {
 
                     docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-cred') {
 
-                        docker.image("${DOCKER_HUB}/event-service:${IMAGE_TAG}").push()
-                        docker.image("${DOCKER_HUB}/inventory-service:${IMAGE_TAG}").push()
-                        docker.image("${DOCKER_HUB}/chatbot-service:${IMAGE_TAG}").push()
-                        docker.image("${DOCKER_HUB}/frontend:${IMAGE_TAG}").push()
+                        // Push versioned images
+                        eventImage.push()
+                        inventoryImage.push()
+                        chatbotImage.push()
+                        frontendImage.push()
 
-                        // Optional: also push latest
-                        docker.image("${DOCKER_HUB}/event-service:${IMAGE_TAG}").tag("latest").push("latest")
-                        docker.image("${DOCKER_HUB}/inventory-service:${IMAGE_TAG}").tag("latest").push("latest")
-                        docker.image("${DOCKER_HUB}/chatbot-service:${IMAGE_TAG}").tag("latest").push("latest")
-                        docker.image("${DOCKER_HUB}/frontend:${IMAGE_TAG}").tag("latest").push("latest")
+                        // Tag + push latest safely
+                        eventImage.tag("latest")
+                        eventImage.push("latest")
+
+                        inventoryImage.tag("latest")
+                        inventoryImage.push("latest")
+
+                        chatbotImage.tag("latest")
+                        chatbotImage.push("latest")
+
+                        frontendImage.tag("latest")
+                        frontendImage.push("latest")
                     }
                 }
             }
         }
 
-        
-        //   5. DEPLOY APPLICATION
-        
+        /* =========================
+           5. DEPLOY APPLICATION
+        ========================== */
         stage('Deploy Application') {
             steps {
                 echo "Deploying application using docker-compose..."
@@ -117,17 +130,15 @@ pipeline {
                 bat '''
                 docker-compose down -v
 
-                docker-compose pull
-
                 docker-compose up -d --build
                 '''
             }
         }
     }
 
-    
-    //   POST ACTIONS
-
+    /* =========================
+       POST ACTIONS
+    ========================== */
     post {
         success {
             echo "Pipeline executed successfully!"
