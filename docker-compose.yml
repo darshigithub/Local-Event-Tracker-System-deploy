@@ -3,7 +3,7 @@ version: '3.8'
 services:
 
   postgres:
-    image: postgres:15
+    image: postgres:17
     container_name: postgres_db_v2
     restart: always
     environment:
@@ -16,11 +16,6 @@ services:
       - ./docker/init.sh:/docker-entrypoint-initdb.d/init.sh
     networks:
       - event-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   inventory-service:
     image: darshanar28/inventory-service-v2:latest
@@ -30,11 +25,10 @@ services:
       - "5001:5001"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ardp28
+      SPRING_DATASOURCE_PASSWORD: root28
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     networks:
       - event-network
 
@@ -46,11 +40,10 @@ services:
       - "5000:5000"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/event_management_db
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ardp28
+      SPRING_DATASOURCE_PASSWORD: root28
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     networks:
       - event-network
 
@@ -63,8 +56,7 @@ services:
     environment:
       EVENT_SERVICE_URL: http://event-service:5000
     depends_on:
-      event-service:
-        condition: service_started
+      - event-service
     networks:
       - event-network
 
