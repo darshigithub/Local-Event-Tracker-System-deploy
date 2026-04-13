@@ -64,9 +64,9 @@ pipeline {
             steps {
                 echo "Deploying with docker-compose..."
                 bat '''
-                docker-compose down
+                docker-compose down -v
                 docker-compose pull 
-                docker-compose up -d
+                docker-compose up --build
                 '''
             }
         }
