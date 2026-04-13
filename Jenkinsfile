@@ -1,12 +1,12 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_HUB = "darshanar28"
-    }
-
     tools {
         maven 'Maven'
+    }
+
+    environment {
+        DOCKER_HUB = "darshanar28"
     }
 
     stages {
@@ -36,41 +36,30 @@ pipeline {
             }
         }
 
-        // 3. BUILD DOCKER IMAGES
-        stage('Build Docker Images') {
+        // 3. BUILD & PUSH DOCKER IMAGES (PLUGIN WAY)
+        stage('Build & Push Docker Images') {
             steps {
-                echo "Building Docker images..."
-                bat '''
-                docker build -t %DOCKER_HUB%/event-service-v2:latest ./event-management
-                docker build -t %DOCKER_HUB%/inventory-service-v2:latest ./inventory-service
-                docker build -t %DOCKER_HUB%/chatbot-service-v2:latest ./chatbot_service
-                docker build -t %DOCKER_HUB%/frontend-v2:latest ./event_frontend
-                '''
-            }
-        }
+                script {
 
-        // 4. PUSH TO DOCKER HUB
-        stage('Push Docker Images') {
-            steps {
-                echo "Pushing images..."
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-cred',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS' 
-                )]) {
-                    bat '''
-                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-cred') {
 
-                    docker push %DOCKER_HUB%/event-service-v2:latest
-                    docker push %DOCKER_HUB%/inventory-service-v2:latest
-                    docker push %DOCKER_HUB%/chatbot-service-v2:latest
-                    docker push %DOCKER_HUB%/frontend-v2:latest 
-                    '''
+                        def eventImage = docker.build("${DOCKER_HUB}/event-service-v2:latest", "./event-management")
+                        eventImage.push()
+
+                        def inventoryImage = docker.build("${DOCKER_HUB}/inventory-service-v2:latest", "./inventory-service")
+                        inventoryImage.push()
+
+                        def chatbotImage = docker.build("${DOCKER_HUB}/chatbot-service-v2:latest", "./chatbot_service")
+                        chatbotImage.push()
+
+                        def frontendImage = docker.build("${DOCKER_HUB}/frontend-v2:latest", "./event_frontend")
+                        frontendImage.push()
+                    }
                 }
             }
         }
 
-        // 5. DEPLOY APPLICATION
+        // 4. DEPLOY APPLICATION
         stage('Deploy Application') {
             steps {
                 echo "Deploying with docker-compose..."
