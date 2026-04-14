@@ -12,9 +12,6 @@ pipeline {
 
     stages {
 
-        /* =========================
-           1. CLONE CODE
-        ========================== */
         stage('Clone Code') {
             steps {
                 echo "Cloning repository..."
@@ -22,9 +19,6 @@ pipeline {
             }
         }
 
-        /* =========================
-           2. BUILD BACKEND SERVICES
-        ========================== */
         stage('Build Backend Services') {
             parallel {
 
@@ -54,9 +48,6 @@ pipeline {
             }
         }
 
-        /* =========================
-           3. BUILD FRONTEND
-        ========================== */
         stage('Build Frontend') {
             steps {
                 dir('event_frontend') {
@@ -66,9 +57,6 @@ pipeline {
             }
         }
 
-        /* =========================
-           4. BUILD DOCKER IMAGES
-        ========================== */
         stage('Build Docker Images') {
             steps {
                 bat """
@@ -80,9 +68,6 @@ pipeline {
             }
         }
 
-        /* =========================
-           5. PUSH TO DOCKER HUB
-        ========================== */
         stage('Push Docker Images') {
             steps {
                 withCredentials([usernamePassword(
@@ -116,22 +101,26 @@ pipeline {
             }
         }
 
-        /* =========================
-           6. DEPLOY APPLICATION
-        ========================== */
         stage('Deploy Application') {
             steps {
                 echo "Deploying application using Docker Compose..."
 
                 withCredentials([
-                    string(credentialsId: 'postgres-pass', variable: 'DB_PASS')
+                    string(credentialsId: 'postgres-pass', variable: 'DB_PASS'),
+                    string(credentialsId: 'postgres-user', variable: 'DB_USER'),
+                    string(credentialsId: 'jwt-secret', variable: 'JWT_SECRET')
                 ]) {
 
                     bat """
                     echo Setting environment variables...
 
-                    set POSTGRES_USER=ardp28
+                    set POSTGRES_USER=%DB_USER%
                     set POSTGRES_PASSWORD=%DB_PASS%
+
+                    set SPRING_DATASOURCE_USERNAME=%DB_USER%
+                    set SPRING_DATASOURCE_PASSWORD=%DB_PASS%
+
+                    set JWT_SECRET=%JWT_SECRET%
 
                     echo Stopping old containers...
                     docker compose down -v
@@ -146,20 +135,17 @@ pipeline {
         }
     }
 
-    /* =========================
-       POST ACTIONS
-    ========================== */
     post {
         success {
-            echo "✅ Pipeline executed successfully!"
+            echo "Pipeline executed successfully!"
         }
 
         failure {
-            echo "❌ Pipeline failed. Check logs!"
+            echo "Pipeline failed. Check logs!"
         }
 
         always {
-            echo "🧹 Cleaning workspace..."
+            echo "Cleaning workspace..."
             cleanWs()
         }
     }
