@@ -92,6 +92,7 @@ pipeline {
                 )]) {
 
                     bat """
+                    echo Logging into Docker Hub...
                     docker login -u %DOCKER_USER% -p %DOCKER_PASS%
 
                     docker push %DOCKER_HUB%/event-service:%IMAGE_TAG%
@@ -122,10 +123,25 @@ pipeline {
             steps {
                 echo "Deploying application using Docker Compose..."
 
-                bat """
-                docker compose down -v
-                docker compose up -d
-                """
+                withCredentials([
+                    string(credentialsId: 'postgres-pass', variable: 'DB_PASS')
+                ]) {
+
+                    bat """
+                    echo Setting environment variables...
+
+                    set POSTGRES_USER=ardp28
+                    set POSTGRES_PASSWORD=%DB_PASS%
+
+                    echo Stopping old containers...
+                    docker compose down -v
+
+                    echo Starting new containers...
+                    docker compose up -d
+
+                    echo Deployment completed!
+                    """
+                }
             }
         }
     }
@@ -135,15 +151,15 @@ pipeline {
     ========================== */
     post {
         success {
-            echo "Pipeline executed successfully!"
+            echo "✅ Pipeline executed successfully!"
         }
 
         failure {
-            echo "Pipeline failed. Check logs!"
+            echo "❌ Pipeline failed. Check logs!"
         }
 
         always {
-            echo "Cleaning workspace..."
+            echo "🧹 Cleaning workspace..."
             cleanWs()
         }
     }
