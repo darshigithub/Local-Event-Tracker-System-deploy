@@ -146,7 +146,7 @@ pipeline {
                 Build Number: ${BUILD_NUMBER}
                 URL: ${BUILD_URL}
                 """,
-                to: "nanuarun001@gmail.com"
+                to: "darshanar2892003@gmail.com"
             )
         }
 
@@ -159,7 +159,7 @@ pipeline {
                 Check logs:
                 ${BUILD_URL}
                 """,
-                to: "nanuarun001@gmail.com"
+                to: "darshanar2892003@gmail.com"
             )
         }
     }
