@@ -144,12 +144,22 @@ pipeline {
             emailext(
                 to: "darshanar2892003@gmail.com",
                 subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                mimeType: 'text/html',
                 body: """
+                <html>
+                <body style="font-family: Arial;">
+
                 <h2 style="color:green;">Build SUCCESS ✅</h2>
 
-                <b>Job:</b> ${env.JOB_NAME}<br>
-                <b>Build Number:</b> ${env.BUILD_NUMBER}<br>
-                <b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
+                <p><b>Job:</b> ${env.JOB_NAME}</p>
+                <p><b>Build Number:</b> ${env.BUILD_NUMBER}</p>
+
+                <p>
+                <a href="${env.BUILD_URL}">👉 Click here to view build</a>
+                </p>
+
+                </body>
+                </html>
                 """
             )
         }
@@ -158,12 +168,22 @@ pipeline {
             emailext(
                 to: "darshanar2892003@gmail.com",
                 subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                mimeType: 'text/html',
                 body: """
+                <html>
+                <body style="font-family: Arial;">
+
                 <h2 style="color:red;">Build FAILED ❌</h2>
 
-                <b>Job:</b> ${env.JOB_NAME}<br>
-                <b>Build Number:</b> ${env.BUILD_NUMBER}<br>
-                <b>Check Logs:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
+                <p><b>Job:</b> ${env.JOB_NAME}</p>
+                <p><b>Build Number:</b> ${env.BUILD_NUMBER}</p>
+
+                <p>
+                <a href="${env.BUILD_URL}">👉 Check Logs Here</a>
+                </p>
+
+                </body>
+                </html>
                 """
             )
         }
@@ -172,12 +192,22 @@ pipeline {
             emailext(
                 to: "darshanar2892003@gmail.com",
                 subject: "⚠ UNSTABLE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                mimeType: 'text/html',
                 body: """
+                <html>
+                <body style="font-family: Arial;">
+
                 <h2 style="color:orange;">Build UNSTABLE ⚠</h2>
 
-                <b>Job:</b> ${env.JOB_NAME}<br>
-                <b>Build Number:</b> ${env.BUILD_NUMBER}<br>
-                <b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
+                <p><b>Job:</b> ${env.JOB_NAME}</p>
+                <p><b>Build Number:</b> ${env.BUILD_NUMBER}</p>
+
+                <p>
+                <a href="${env.BUILD_URL}">👉 View Build</a>
+                </p>
+
+                </body>
+                </html>
                 """
             )
         }
