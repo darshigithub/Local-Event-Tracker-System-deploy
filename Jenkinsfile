@@ -77,8 +77,8 @@ pipeline {
                 )]) {
 
                     bat """
-                    echo Logging into Docker Hub...
-                    docker login -u %DOCKER_USER% -p %DOCKER_PASS%
+                    echo Logging into Docker Hub securely...
+                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
 
                     docker push %DOCKER_HUB%/event-service:%IMAGE_TAG%
                     docker push %DOCKER_HUB%/inventory-service:%IMAGE_TAG%
@@ -103,7 +103,7 @@ pipeline {
 
         stage('Deploy Application') {
             steps {
-                echo "Deploying application using Docker Compose..."
+                echo "Deploying using Docker Compose..."
 
                 withCredentials([
                     string(credentialsId: 'postgres-pass', variable: 'DB_PASS'),
@@ -134,14 +134,41 @@ pipeline {
             }
         }
     }
-
+    
     post {
+
         success {
-            echo "Pipeline executed successfully!"
+            withCredentials([string(credentialsId: 'email-to', variable: 'EMAIL_TO')]) {
+                emailext(
+                    subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+                    body: """
+                    Good news!
+
+                    Build SUCCESS ✅
+
+                    Job: ${JOB_NAME}
+                    Build Number: ${BUILD_NUMBER}
+                    URL: ${BUILD_URL}
+                    """,
+                    to: "${EMAIL_TO}"
+                )
+            }
         }
 
         failure {
-            echo "Pipeline failed. Check logs!"
+            withCredentials([string(credentialsId: 'email-to', variable: 'EMAIL_TO')]) {
+                emailext(
+                    subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
+                    body: """
+                    Build FAILED ❌
+
+                    Please check logs:
+
+                    ${BUILD_URL}
+                    """,
+                    to: "${EMAIL_TO}"
+                )
+            }
         }
 
         always {

@@ -3,7 +3,7 @@ import Footer from "../components/Footer";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
-import inventoryApi from "../inventoryApi";
+import inventoryApi from "../inventoryApi"; 
 
 function BookingPage() {
   const { eventId } = useParams();
@@ -16,7 +16,7 @@ function BookingPage() {
 
   const [seats, setSeats] = useState(1);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
 
   // ---------------- Fetch Data ----------------
   useEffect(() => {
@@ -26,7 +26,7 @@ function BookingPage() {
         setEvent(eventRes.data);
 
         const inventoryRes = await inventoryApi.get();
-        setInventory(inventoryRes.data);
+        setInventory(inventoryRes.data); 
 
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load data");
