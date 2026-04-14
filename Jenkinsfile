@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven'
+        maven 'Maven3'
     }
 
     environment {
@@ -23,115 +23,109 @@ pipeline {
         }
 
         /* =========================
-           2. BUILD + TEST
+           2. BUILD BACKEND SERVICES
         ========================== */
-        stage('Build & Test Services') {
+        stage('Build Backend Services') {
             parallel {
 
                 stage('Event Service') {
                     steps {
-                        bat '''
-                        cd event-management
-                        mvn clean test package -DskipTests
-                        '''
+                        dir('event-management') {
+                            bat 'mvn clean package -DskipTests'
+                        }
                     }
                 }
 
                 stage('Inventory Service') {
                     steps {
-                        bat '''
-                        cd inventory-service
-                        mvn clean test package -DskipTests
-                        '''
+                        dir('inventory-service') {
+                            bat 'mvn clean package -DskipTests'
+                        }
                     }
                 }
 
                 stage('Chatbot Service') {
                     steps {
-                        bat '''
-                        cd chatbot_service
-                        mvn clean test package -DskipTests
-                        '''
+                        dir('chatbot_service') {
+                            bat 'mvn clean package -DskipTests'
+                        }
                     }
                 }
             }
         }
 
         /* =========================
-           3. BUILD DOCKER IMAGES
+           3. BUILD FRONTEND
         ========================== */
-        stage('Build Docker Images') {
-
+        stage('Build Frontend') {
             steps {
-                script {
-
-                    eventImage = docker.build(
-                        "${DOCKER_HUB}/event-service:${IMAGE_TAG}",
-                        "./event-management"
-                    )
-
-                    inventoryImage = docker.build(
-                        "${DOCKER_HUB}/inventory-service:${IMAGE_TAG}",
-                        "./inventory-service"
-                    )
-
-                    chatbotImage = docker.build(
-                        "${DOCKER_HUB}/chatbot-service:${IMAGE_TAG}",
-                        "./chatbot_service"
-                    )
-
-                    frontendImage = docker.build(
-                        "${DOCKER_HUB}/frontend:${IMAGE_TAG}",
-                        "./event_frontend"
-                    )
+                dir('event_frontend') {
+                    bat 'npm install'
+                    bat 'npm run build'
                 }
             }
         }
 
         /* =========================
-           4. PUSH TO DOCKER HUB
+           4. BUILD DOCKER IMAGES
+        ========================== */
+        stage('Build Docker Images') {
+            steps {
+                bat """
+                docker build -t %DOCKER_HUB%/event-service:%IMAGE_TAG% ./event-management
+                docker build -t %DOCKER_HUB%/inventory-service:%IMAGE_TAG% ./inventory-service
+                docker build -t %DOCKER_HUB%/chatbot-service:%IMAGE_TAG% ./chatbot_service
+                docker build -t %DOCKER_HUB%/frontend:%IMAGE_TAG% ./event_frontend
+                """
+            }
+        }
+
+        /* =========================
+           5. PUSH TO DOCKER HUB
         ========================== */
         stage('Push Docker Images') {
             steps {
-                script {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-cred',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
 
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-cred') {
+                    bat """
+                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
 
-                        // Push versioned images
-                        eventImage.push()
-                        inventoryImage.push()
-                        chatbotImage.push()
-                        frontendImage.push()
+                    docker push %DOCKER_HUB%/event-service:%IMAGE_TAG%
+                    docker push %DOCKER_HUB%/inventory-service:%IMAGE_TAG%
+                    docker push %DOCKER_HUB%/chatbot-service:%IMAGE_TAG%
+                    docker push %DOCKER_HUB%/frontend:%IMAGE_TAG%
 
-                        // Tag + push latest safely
-                        eventImage.tag("latest")
-                        eventImage.push("latest")
+                    docker tag %DOCKER_HUB%/event-service:%IMAGE_TAG% %DOCKER_HUB%/event-service:latest
+                    docker push %DOCKER_HUB%/event-service:latest
 
-                        inventoryImage.tag("latest")
-                        inventoryImage.push("latest")
+                    docker tag %DOCKER_HUB%/inventory-service:%IMAGE_TAG% %DOCKER_HUB%/inventory-service:latest
+                    docker push %DOCKER_HUB%/inventory-service:latest
 
-                        chatbotImage.tag("latest")
-                        chatbotImage.push("latest")
+                    docker tag %DOCKER_HUB%/chatbot-service:%IMAGE_TAG% %DOCKER_HUB%/chatbot-service:latest
+                    docker push %DOCKER_HUB%/chatbot-service:latest
 
-                        frontendImage.tag("latest")
-                        frontendImage.push("latest")
-                    }
+                    docker tag %DOCKER_HUB%/frontend:%IMAGE_TAG% %DOCKER_HUB%/frontend:latest
+                    docker push %DOCKER_HUB%/frontend:latest
+                    """
                 }
             }
         }
 
         /* =========================
-           5. DEPLOY APPLICATION
+           6. DEPLOY APPLICATION
         ========================== */
         stage('Deploy Application') {
             steps {
-                echo "Deploying application using docker-compose..."
+                echo "Deploying application using Docker Compose..."
 
-                bat '''
-                docker-compose down -v
-
-                docker-compose up -d --build
-                '''
+                bat """
+                docker compose down -v
+                docker compose up -d
+                """
             }
         }
     }
