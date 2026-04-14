@@ -77,7 +77,8 @@ pipeline {
                 )]) {
 
                     bat """
-                    echo Logging into Docker Hub securely...
+                    echo Logging into Docker Hub...
+
                     echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
 
                     docker push %DOCKER_HUB%/event-service:%IMAGE_TAG%
@@ -86,15 +87,13 @@ pipeline {
                     docker push %DOCKER_HUB%/frontend:%IMAGE_TAG%
 
                     docker tag %DOCKER_HUB%/event-service:%IMAGE_TAG% %DOCKER_HUB%/event-service:latest
-                    docker push %DOCKER_HUB%/event-service:latest
-
                     docker tag %DOCKER_HUB%/inventory-service:%IMAGE_TAG% %DOCKER_HUB%/inventory-service:latest
-                    docker push %DOCKER_HUB%/inventory-service:latest
-
                     docker tag %DOCKER_HUB%/chatbot-service:%IMAGE_TAG% %DOCKER_HUB%/chatbot-service:latest
-                    docker push %DOCKER_HUB%/chatbot-service:latest
-
                     docker tag %DOCKER_HUB%/frontend:%IMAGE_TAG% %DOCKER_HUB%/frontend:latest
+
+                    docker push %DOCKER_HUB%/event-service:latest
+                    docker push %DOCKER_HUB%/inventory-service:latest
+                    docker push %DOCKER_HUB%/chatbot-service:latest
                     docker push %DOCKER_HUB%/frontend:latest
                     """
                 }
@@ -134,32 +133,52 @@ pipeline {
             }
         }
     }
-    
+
     post {
+
+        always {
+            echo "Pipeline finished"
+        }
+
         success {
             emailext(
-                subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+                to: "darshanar2892003@gmail.com",
+                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
-                Build SUCCESS ✅
+                <h2 style="color:green;">Build SUCCESS ✅</h2>
 
-                Job: ${JOB_NAME}
-                Build Number: ${BUILD_NUMBER}
-                URL: ${BUILD_URL}
-                """,
-                to: "darshanar2892003@gmail.com"
+                <b>Job:</b> ${env.JOB_NAME}<br>
+                <b>Build Number:</b> ${env.BUILD_NUMBER}<br>
+                <b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
+                """
             )
         }
 
         failure {
             emailext(
-                subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
+                to: "darshanar2892003@gmail.com",
+                subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
-                Build FAILED ❌
+                <h2 style="color:red;">Build FAILED ❌</h2>
 
-                Check logs:
-                ${BUILD_URL}
-                """,
-                to: "darshanar2892003@gmail.com"
+                <b>Job:</b> ${env.JOB_NAME}<br>
+                <b>Build Number:</b> ${env.BUILD_NUMBER}<br>
+                <b>Check Logs:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
+                """
+            )
+        }
+
+        unstable {
+            emailext(
+                to: "darshanar2892003@gmail.com",
+                subject: "⚠ UNSTABLE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                <h2 style="color:orange;">Build UNSTABLE ⚠</h2>
+
+                <b>Job:</b> ${env.JOB_NAME}<br>
+                <b>Build Number:</b> ${env.BUILD_NUMBER}<br>
+                <b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
+                """
             )
         }
     }
