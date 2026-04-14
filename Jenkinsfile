@@ -136,44 +136,31 @@ pipeline {
     }
     
     post {
-
         success {
-            withCredentials([string(credentialsId: 'email-to', variable: 'EMAIL_TO')]) {
-                emailext(
-                    subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
-                    body: """
-                    Good news!
+            emailext(
+                subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+                body: """
+                Build SUCCESS ✅
 
-                    Build SUCCESS ✅
-
-                    Job: ${JOB_NAME}
-                    Build Number: ${BUILD_NUMBER}
-                    URL: ${BUILD_URL}
-                    """,
-                    to: "${EMAIL_TO}"
-                )
-            }
+                Job: ${JOB_NAME}
+                Build Number: ${BUILD_NUMBER}
+                URL: ${BUILD_URL}
+                """,
+                to: "nanuarun001@gmail.com"
+            )
         }
 
         failure {
-            withCredentials([string(credentialsId: 'email-to', variable: 'EMAIL_TO')]) {
-                emailext(
-                    subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
-                    body: """
-                    Build FAILED ❌
+            emailext(
+                subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
+                body: """
+                Build FAILED ❌
 
-                    Please check logs:
-
-                    ${BUILD_URL}
-                    """,
-                    to: "${EMAIL_TO}"
-                )
-            }
-        }
-
-        always {
-            echo "Cleaning workspace..."
-            cleanWs()
+                Check logs:
+                ${BUILD_URL}
+                """,
+                to: "nanuarun001@gmail.com"
+            )
         }
     }
 }
