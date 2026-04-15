@@ -142,7 +142,7 @@ pipeline {
 
         success {
             emailext(
-                to: "darshanar2892003@gmail.com",
+                to: "nanuarun001@gmail.com",
                 subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 mimeType: 'text/html',
                 body: """
@@ -166,7 +166,7 @@ pipeline {
 
         failure {
             emailext(
-                to: "darshanar2892003@gmail.com",
+                to: "nanuarun001@gmail.com",
                 subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 mimeType: 'text/html',
                 body: """
@@ -190,7 +190,7 @@ pipeline {
 
         unstable {
             emailext(
-                to: "darshanar2892003@gmail.com",
+                to: "nanuarun001@gmail.com",
                 subject: "⚠ UNSTABLE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 mimeType: 'text/html',
                 body: """
