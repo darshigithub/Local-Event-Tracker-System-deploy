@@ -26,7 +26,7 @@ services:
 
   inventory-service:
     image: darshanar28/inventory-service-v2:latest
-    container_name: inventory_service_v2
+    container_name: inventory_service_v2 
     restart: always
     ports:
       - "${INVENTORY_SERVICE_PORT:-5001}:5001"
@@ -87,6 +87,32 @@ services:
     depends_on:
       - event-service
       - inventory-service
+    networks:
+      - event-network
+  
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus_v2
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - event-service
+      - inventory-service
+      - chatbot-service
+    networks:
+      - event-network
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana_v2
+    restart: always
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
     networks:
       - event-network
 
